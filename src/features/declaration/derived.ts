@@ -1,6 +1,8 @@
 import type { Declaration } from '../../domain/declaration';
 import type { Money } from '../../domain/money';
-import { isValue } from '../../domain/field-value';
+import type { FieldValue } from '../../domain/field-value';
+import { fv, isValue, NOT_AVAILABLE } from '../../domain/field-value';
+import { sumMoney } from '../../domain/money';
 
 /** Whole units, no currency prefix — for tables whose header states the currency. */
 export function units(m: Money): string {
@@ -26,6 +28,28 @@ export function additionalRefs(d: Declaration): string | null {
     .map((l) => (isValue(l.additionalReference) ? l.additionalReference.value : null))
     .filter((x): x is string => x !== null);
   return refs.length > 0 ? refs.join(', ') : null;
+}
+
+/**
+ * Goods origin is declared per goods line, so a declaration has one origin only
+ * when every line agrees. Never collapse several origins into the first one.
+ */
+export function lineOriginSummary(d: Declaration): string {
+  const distinct = [...new Set(d.lines.map((l) => l.originCountry))];
+  if (distinct.length === 0) return 'Not available';
+  if (distinct.length === 1) return distinct[0] as string;
+  return `Several — see goods lines (${distinct.length} origins)`;
+}
+
+/**
+ * Declaration-level excise, summed from the goods lines that declare it. When no
+ * line declares excise the field state is carried up rather than shown as zero
+ * or as "Not applicable" — excise is optional on all three declaration types.
+ */
+export function exciseTotal(d: Declaration): FieldValue<Money> {
+  const declared = d.lines.map((l) => l.excise).filter(isValue);
+  if (declared.length > 0) return fv(sumMoney(declared.map((f) => f.value), d.currency));
+  return d.lines[0]?.excise ?? NOT_AVAILABLE;
 }
 
 export function fxNote(d: Declaration): string {

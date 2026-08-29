@@ -5,8 +5,9 @@ import { additionalRefs } from '../derived';
 import styles from '../declaration.module.css';
 
 /**
- * Due-diligence statements and supporting-document references are not part of
- * the declaration feed (see contracts/openapi.yaml). Principle #1: until the
+ * Due-diligence statements are in the agreed field list (contracts/fields.json,
+ * "Due Diligence Statements") but are not yet carried by the feed. Supporting-
+ * document references are not in the field list at all. Principle #1: until the
  * source supplies them they are shown as "Not available" — never invented.
  */
 export function ReferencesTab({ d }: { d: Declaration }) {
@@ -42,7 +43,7 @@ export function ReferencesTab({ d }: { d: Declaration }) {
           ]}
         />
         <div className={styles.footnote}>
-          Supporting-document references are not yet supplied by the declaration feed. Original
+          Supporting-document references are not supplied by the declaration feed. Original
           declaration documents are not stored in Customs Insights.
         </div>
       </Card>

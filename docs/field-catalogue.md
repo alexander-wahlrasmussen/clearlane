@@ -130,19 +130,32 @@ grouping over EORIs rather than a stored attribute.
 **Need:** where legal entity comes from — a customer-account mapping outside the declaration feed, or
 derived from EORI? The entity switcher is in the shell, so this is on the critical path.
 
-## Six places the UI states more than the data supports
+## Six places the UI stated more than the data supported — fixed
 
-Ordinary fixes rather than decisions, but each is a spot where the source list proves a rendered
-claim is wrong — principle #1 problems, not cosmetic ones.
+Each was a spot where the source list proved a rendered claim wrong, so these were principle #1
+problems rather than cosmetic ones. All six are now corrected; none depended on the five open
+decisions.
 
-| What | Where | Why |
-|---|---|---|
-| Declarant and customs broker shown as the same party | `PartiesTab.tsx` | Both rows render `d.broker.name`. `Declaran_Name` / `Declarant_EORI` are mandatory on all three types and `CustomsBroker` is a separate field — different parties, and they can differ. |
-| "Origin country" and "Exporting country" render the same value | `PartiesTab.tsx` | Both call `countryLabel(d.originCountry)`. The source separates header-level `Departure_CountryCode` from line-level `Origin_CountryCode`, and origin is per goods line — one declaration can hold several. |
-| "Deductions: None declared" hard-coded | `ValuesTab.tsx` | `OtherDiscounts_Deductions` is a real line-level field. Asserting "none declared" without reading it is the claim principle #1 forbids. |
-| "Excise: Not applicable" hard-coded | `ValuesTab.tsx` | Four excise fields exist — base, rate, amount, currency — optional on all three types. Optional and absent is *Not available*; *Not applicable* claims excise could never apply. |
-| Due-diligence statements described as not supplied by the feed | `ReferencesTab.tsx` | The tab comment and footnote both say so. `Due Diligence Statements` is in the source list, so the copy will be wrong once the field lands. |
-| Presentation office shown on every declaration | `PartiesTab.tsx` | Mandatory on transit only, alongside `EntryOfficeID` and `ExitOfficeID`, neither modelled. Transit is the least-served type: only 24 of 77 fields are mandatory for it, and the goods-line number is not among them. |
+| What was wrong | Fix |
+|---|---|
+| Declarant and customs broker rendered from the same `d.broker.name` | `Declaration.declarant: Party` added to the domain, DTO, contract and mapping. The generator self-files a minority of declarations, so declarant and broker differ on 9 of 48. |
+| "Origin country" and "Exporting country" both rendered `d.originCountry` | `Declaration.originCountry` renamed `departureCountry` — it is the header-level country of dispatch. Goods origin now comes from the lines via `lineOriginSummary`, which reports "Several — see goods lines" rather than collapsing to the first. 15 of 48 declarations now carry more than one line origin. |
+| "Deductions: None declared" hard-coded | Renders *Not available*. `OtherDiscounts_Deductions` is in the field list but not yet carried by the feed, so no value may be asserted. |
+| "Excise: Not applicable" hard-coded | Renders the real field state, summed from the goods lines by `exciseTotal`. Excise is optional on all three types, so absence is *Not available*. The generator now emits `§nav` for it. |
+| Due-diligence copy said the feed does not carry the field | Comment and footnote corrected: the field is in the agreed list but not yet populated. Supporting-document references genuinely are not in the list, and say so. |
+| Presentation office shown unconditionally | Now `FieldValue<string>`, so absence is representable and renders *Not available*. |
+
+The last one changed character once applicability was derived. It first looked like "shown on every
+declaration but mandatory on transit only". Under the agreed override, presentation office is
+`optional` on import and export — legitimately present there — so the problem was not that it was
+displayed but that its type could not express absence. Five import declarations now arrive without
+one.
+
+Two side-effects worth noting. The export had a single `Origin` column fed the declaration-level
+field on declaration rows and the line-level field on goods-line rows; it is now split into
+`Departure` and `Origin`, with tests asserting every row matches the header width and that the two
+columns never overlap. And `§nav` reaches the UI for the first time — one of the two field states the
+synthetic dataset had never exercised. `§unv` is still unexercised.
 
 ## Notes on the source list
 

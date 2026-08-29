@@ -138,7 +138,7 @@ export function generateDeclarations(): DeclarationDto[] {
       pkgQty: Math.max(1, Math.round(qty / ri(18, 60))),
       suppUnits: isCounted ? `${qty.toLocaleString('en-GB')} items` : '§na',
       quota: '§na',
-      exciseMinor: '§na',
+      exciseMinor: '§nav',
       addRef: `INV-26-${ri(1000, 9999)}`,
     };
   }
@@ -170,9 +170,15 @@ export function generateDeclarations(): DeclarationDto[] {
       dest = pk(COUNTRIES.filter((x) => x.c !== C.c)).c;
       impName = C.entity; expName = sup[0];
     }
-    const lines = Array.from({ length: nL }, (_, i) =>
-      mkLine(i + 1, type, C, type === 'export' ? C.c : origin),
-    );
+    const id = idc++;
+    // Goods origin is declared per line and need not match the country of
+    // departure: a consignment can carry commodities from several suppliers.
+    const lineOrigin = (i: number): string => {
+      if (type === 'export') return C.c;
+      if (i === 0 || (id + i) % 3 !== 0) return origin;
+      return SUPPLIERS[(id + i) % SUPPLIERS.length]![1];
+    };
+    const lines = Array.from({ length: nL }, (_, i) => mkLine(i + 1, type, C, lineOrigin(i)));
     const status =
       type === 'import'
         ? pk(['Released', 'Released', 'Released', 'Released', 'Released', 'Amended', 'Under customs control'])
@@ -182,7 +188,7 @@ export function generateDeclarations(): DeclarationDto[] {
     const released = ['Released', 'Completed', 'Amended'].includes(status);
     const mode = pk(MODES);
     const broker = pk(BROKERS);
-    const id = idc++;
+    const selfFiled = id % 5 === 0;
     const d: DeclarationDto = {
       mrn: mkMrn(C.c),
       declNo: `${C.c}-${type === 'import' ? 'IMP' : type === 'export' ? 'EXP' : 'TRA'}-26-${ri(10000, 99999)}`,
@@ -196,14 +202,19 @@ export function generateDeclarations(): DeclarationDto[] {
       fx: C.fx,
       date,
       release: released ? addDays(date, ri(0, 2)) : null,
-      origin,
+      departure: origin,
       dest,
       mode,
       incoterms: pk(INCO),
       container: mode === 'Maritime' ? `${pk(CONT)}${ri(1000000, 9999999)}` : '§na',
-      office: C.office,
+      office: type === 'transit' || id % 7 !== 3 ? C.office : '§nav',
       importer: { name: impName, eori: type === 'export' ? null : EORI[C.entity]! },
       exporter: { name: expName, eori: type === 'export' ? EORI[C.entity]! : null },
+      // The broker usually files in representation, but the group self-files a
+      // minority of declarations — declarant and broker are not the same field.
+      declarant: selfFiled
+        ? { name: C.entity, eori: EORI[C.entity]! }
+        : { name: broker, eori: BEORI[broker]! },
       broker,
       brokerEori: BEORI[broker]!,
       invoiceMinor: 0, transportMinor: 0, insuranceMinor: 0,
@@ -222,8 +233,6 @@ export function generateDeclarations(): DeclarationDto[] {
       attention: null,
     };
     retotal(d);
-    // Documents-only extra references derive from id downstream; keep id in UCR-free field? No — stable via mrn.
-    void id;
     return d;
   }
 
@@ -244,7 +253,7 @@ export function generateDeclarations(): DeclarationDto[] {
   const GBC = COUNTRIES[0]!;
   const a1 = decls.find((d) => d.cc === 'GB' && d.type === 'import')!;
   if (a1.lines.length < 2) {
-    a1.lines.push(mkLine(2, 'import', GBC, a1.origin));
+    a1.lines.push(mkLine(2, 'import', GBC, a1.departure));
     retotal(a1);
   }
   a1.lines[1]!.netKg = '§np';

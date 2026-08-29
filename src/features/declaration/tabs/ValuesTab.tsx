@@ -1,10 +1,18 @@
 import type { Declaration } from '../../../domain/declaration';
-import { isValue } from '../../../domain/field-value';
+import { isValue, NOT_AVAILABLE } from '../../../domain/field-value';
 import { formatMoney } from '../../../domain/money';
 import { reconcile } from '../../../domain/reconciliation';
+import { FieldCell } from '../../../components/FieldDisplay';
 import { Card } from '../KV';
-import { amountOrDash, fxNote, rateLabel, units } from '../derived';
+import { amountOrDash, exciseTotal, fxNote, rateLabel, units } from '../derived';
 import styles from '../declaration.module.css';
+
+/**
+ * Discounts and deductions (OtherDiscounts_Deductions) are in the agreed field
+ * list but not yet carried by the feed, so the field is Not available. It must
+ * never be rendered as "None declared" — that asserts a value we have not read.
+ */
+const NOT_HELD = NOT_AVAILABLE;
 
 export function ValuesTab({ d }: { d: Declaration }) {
   const recon = reconcile(d);
@@ -88,8 +96,8 @@ export function ValuesTab({ d }: { d: Declaration }) {
           <div className="num">{formatMoney(d.transportTotal)}</div>
           <div className={styles.amountLabel}>Insurance costs</div>
           <div className="num">{formatMoney(d.insuranceTotal)}</div>
-          <div className={styles.amountLabel}>Deductions</div>
-          <div className={styles.amountMuted}>None declared</div>
+          <div className={styles.amountLabel}>Discounts and deductions</div>
+          <div><FieldCell field={NOT_HELD} /></div>
           <div className={styles.amountStrong}>Customs value</div>
           <div className={`${styles.amountStrong} num`}>{formatMoney(d.customsValueTotal)}</div>
           <div className={styles.amountLabel}>Duty</div>
@@ -97,7 +105,7 @@ export function ValuesTab({ d }: { d: Declaration }) {
           <div className={styles.amountLabel}>VAT</div>
           <div className="num">{formatMoney(d.vatTotal)}</div>
           <div className={styles.amountLabel}>Excise</div>
-          <div className={styles.amountMuted}>Not applicable</div>
+          <div className="num"><FieldCell field={exciseTotal(d)} render={(m) => formatMoney(m)} /></div>
         </div>
         <div className={styles.currencyNote}>
           <div>

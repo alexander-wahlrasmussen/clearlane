@@ -94,14 +94,18 @@ export interface Declaration {
   clearanceDate: string;
   /** null = not yet released — render "Not yet released", never a blank. */
   releaseDate: string | null;
-  originCountry: string;
+  /** Country of departure/dispatch (header level). Goods origin is per line. */
+  departureCountry: string;
   destinationCountry: string;
   transportMode: string;
   incoterms: string;
   containerNumber: FieldValue<string>;
-  presentationOffice: string;
+  /** Mandatory on transit; may legitimately be absent on import/export. */
+  presentationOffice: FieldValue<string>;
   importer: Party;
   exporter: Party;
+  /** Who filed the declaration. Distinct from the broker — they can differ. */
+  declarant: Party;
   broker: { name: string; eori: string };
   invoiceTotal: Money;
   transportTotal: Money;

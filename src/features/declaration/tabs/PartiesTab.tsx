@@ -3,6 +3,7 @@ import { isValue } from '../../../domain/field-value';
 import { countryLabel } from '../../../domain/countries';
 import { FieldCell, Term } from '../../../components/FieldDisplay';
 import { Card, KVGrid } from '../KV';
+import { lineOriginSummary } from '../derived';
 import styles from '../declaration.module.css';
 
 function eoriCell(f: Declaration['importer']['eori']) {
@@ -24,8 +25,8 @@ export function PartiesTab({ d }: { d: Declaration }) {
             ],
             ['Exporter / seller', d.exporter.name],
             ['Exporter EORI', eoriCell(d.exporter.eori)],
-            ['Declarant', `${d.broker.name} (declarant)`],
-            ['Declarant EORI', <span className="mono">{d.broker.eori}</span>],
+            ['Declarant', d.declarant.name],
+            ['Declarant EORI', eoriCell(d.declarant.eori)],
             ['Customs broker', d.broker.name],
           ]}
         />
@@ -33,12 +34,18 @@ export function PartiesTab({ d }: { d: Declaration }) {
       <Card title="Movement">
         <KVGrid
           rows={[
-            ['Origin country', countryLabel(d.originCountry)],
-            ['Exporting country', countryLabel(d.originCountry)],
+            ['Origin country', lineOriginSummary(d)],
+            ['Exporting country', countryLabel(d.departureCountry)],
             ['Destination country', countryLabel(d.destinationCountry)],
             ['Declaration country', d.countryName],
             ['Border transport mode', d.transportMode],
-            ['Presentation office', d.presentationOffice],
+            [
+              'Presentation office',
+              <FieldCell
+                field={d.presentationOffice}
+                render={(v) => <span className="mono">{v}</span>}
+              />,
+            ],
             ['Containerised', isValue(d.containerNumber) ? 'Yes — containerised' : 'No'],
             [
               'Transport equipment',

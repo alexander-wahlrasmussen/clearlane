@@ -76,14 +76,16 @@ export interface DeclarationDto {
   fx: number;
   date: string;
   release: string | null;
-  origin: string;
+  /** Country of departure/dispatch. Goods origin is per line (GoodsLineDto.origin). */
+  departure: string;
   dest: string;
   mode: string;
   incoterms: string;
   container: WireField<string>;
-  office: string;
+  office: WireField<string>;
   importer: PartyDto;
   exporter: PartyDto;
+  declarant: PartyDto;
   broker: string;
   brokerEori: string;
   invoiceMinor: number;

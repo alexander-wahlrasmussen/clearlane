@@ -76,7 +76,7 @@ export function DeclarationsTable(props: {
       col.accessor('type', { header: 'Type', cell: (c) => typeLabel(c.getValue()) }),
       col.accessor((d) => d.importer.name, { id: 'importer', header: 'Importer / buyer' }),
       col.accessor((d) => d.exporter.name, { id: 'exporter', header: 'Exporter / seller' }),
-      col.accessor('originCountry', { header: 'Origin' }),
+      col.accessor('departureCountry', { header: 'Departure' }),
       col.accessor('destinationCountry', { header: 'Destination' }),
       col.accessor('customsValueTotal', {
         header: () => <SortHeader label="Customs value" sortKey="customsValue" />,

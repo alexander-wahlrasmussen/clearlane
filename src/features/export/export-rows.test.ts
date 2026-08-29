@@ -22,6 +22,22 @@ describe('buildExportRows', () => {
     expect(rows.length).toBe(1 + decls.length);
   });
 
+  it('every row is exactly as wide as the header', () => {
+    for (const r of buildExportRows(decls, true)) expect(r.length).toBe(EXPORT_HEADER.length);
+  });
+
+  it('departure and goods-line origin never share a column', () => {
+    const departure = EXPORT_HEADER.indexOf('Departure');
+    const origin = EXPORT_HEADER.indexOf('Origin');
+    expect(departure).toBeGreaterThan(-1);
+    expect(origin).toBeGreaterThan(-1);
+    expect(departure).not.toBe(origin);
+    for (const r of buildExportRows(decls, true)) {
+      if (r[0] === 'Declaration') expect(r[origin]).toBe('');
+      if (r[0] === 'Goods line') expect(r[departure]).toBe('');
+    }
+  });
+
   it('currency is stated on every row', () => {
     const cur = EXPORT_HEADER.indexOf('Currency');
     for (const r of buildExportRows(decls, true).slice(1)) {

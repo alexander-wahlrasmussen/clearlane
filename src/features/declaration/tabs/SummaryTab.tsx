@@ -27,7 +27,7 @@ export function SummaryTab({ d }: { d: Declaration }) {
             ['Declaration country', d.countryName],
             ['Clearance date', <span className="num">{formatIsoDate(d.clearanceDate)}</span>],
             ['Release date', <span className="num">{d.releaseDate ? formatIsoDate(d.releaseDate) : 'Not yet released'}</span>],
-            ['Origin', countryLabel(d.originCountry)],
+            ['Departure', countryLabel(d.departureCountry)],
             ['Destination', countryLabel(d.destinationCountry)],
             ['Transport mode', d.transportMode],
             [

@@ -217,14 +217,15 @@ components:
         fx: { type: number, description: Conversion rate declared on the declaration }
         date: { type: string, format: date }
         release: { type: string, format: date, nullable: true }
-        origin: { type: string }
+        departure: { type: string }
         dest: { type: string }
         mode: { type: string }
         incoterms: { type: string }
         container: { $ref: '#/components/schemas/WireString' }
-        office: { type: string }
+        office: { $ref: '#/components/schemas/WireString' }
         importer: { $ref: '#/components/schemas/Party' }
         exporter: { $ref: '#/components/schemas/Party' }
+        declarant: { $ref: '#/components/schemas/Party' }
         broker: { type: string }
         brokerEori: { type: string }
         invoiceMinor: { type: integer }
