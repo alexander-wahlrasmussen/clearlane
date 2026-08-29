@@ -1,0 +1,1706 @@
+{
+  "$comment": "Field catalogue — generated from DataFields.csv. The single source of truth for which fields exist, which are mandatory per declaration type, how each is labelled, and where it belongs in the UI. Regenerate rather than hand-edit. \"tab\" placements for coverage:\"new\" fields are proposals awaiting design review.",
+  "version": 1,
+  "generatedFrom": "DataFields.csv",
+  "fieldCount": 77,
+  "stateRules": {
+    "$comment": "Per-field, per-declaration-type applicability, in the \"states\" key on each field. expected = mandatory on this type; absent renders \"Not populated\". optional = may legitimately be present or absent; absent renders \"Not available\". not-applicable = never applies to this type; always renders \"Not applicable\", present or not. not-verified is orthogonal — it records whether a present value has been compared with the source record.",
+    "derivation": "mandatory on this type -> expected; blank here but mandatory on another type -> not-applicable; blank on every type -> optional. Fields carrying \"statesOverridden\" deviate from that default — see STATE_OVERRIDES in scripts/build-field-catalogue.mjs for the reason on each."
+  },
+  "fields": [
+    {
+      "id": "clearance_date",
+      "source": "ClearanceDate",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "clearanceDate",
+      "coverage": "modelled",
+      "label": "Clearance date",
+      "tab": "summary",
+      "format": "date",
+      "export": true
+    },
+    {
+      "id": "declaration_status",
+      "source": "Declaration_Status",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "status",
+      "coverage": "modelled",
+      "label": "Status",
+      "tab": "summary",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "declaration_type",
+      "source": "DeclarationType",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "type",
+      "coverage": "modelled",
+      "label": "Declaration type",
+      "tab": "summary",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "mrn",
+      "source": "MRN",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "mrn",
+      "coverage": "modelled",
+      "label": "MRN",
+      "tab": "references",
+      "format": "mono",
+      "export": true
+    },
+    {
+      "id": "other_info",
+      "source": "OtherInfo",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Other information",
+      "tab": "references",
+      "format": "text",
+      "export": false,
+      "note": "Free text. Optional on every type."
+    },
+    {
+      "id": "declaration_reference_number",
+      "source": "Declaration_ReferenceNumber",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Declaration reference",
+      "tab": "references",
+      "format": "mono",
+      "export": false,
+      "note": "Distinct from DeclarationNo and Customs ID /MRN. Which of the four identifiers the register should key on is an open question."
+    },
+    {
+      "id": "agent_role_code",
+      "source": "Agent_Role_Code",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Agent role",
+      "tab": "parties",
+      "format": "code",
+      "export": false,
+      "note": "Coded value — needs a label lookup before it can be shown (principle #7)."
+    },
+    {
+      "id": "consignor_name",
+      "source": "Consignor_Name",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "exporter.name",
+      "coverage": "modelled",
+      "label": "Consignor / seller",
+      "tab": "parties",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "consignor_eori",
+      "source": "Consignor_EORI",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "not-applicable",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "exporter.eori",
+      "coverage": "modelled",
+      "label": "Consignor EORI",
+      "tab": "parties",
+      "format": "mono",
+      "export": false,
+      "note": "Mandatory on export only — on import the consignor is typically non-EU and holds no EORI."
+    },
+    {
+      "id": "consignee_name",
+      "source": "Consignee_Name",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "importer.name",
+      "coverage": "modelled",
+      "label": "Consignee / buyer",
+      "tab": "parties",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "consignee_eori",
+      "source": "Consignee_EORI",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "importer.eori",
+      "coverage": "modelled",
+      "label": "Consignee EORI",
+      "tab": "parties",
+      "format": "mono",
+      "export": false,
+      "note": "Mandatory on import only — mirror of Consignor_EORI."
+    },
+    {
+      "id": "declarant_name",
+      "source": "Declaran_Name",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Declarant",
+      "tab": "parties",
+      "format": "text",
+      "export": true,
+      "note": "Source spells this \"Declaran_Name\" (missing t) — confirm before the API contract fixes the name. Distinct from CustomsBroker; the UI currently shows the broker under both labels."
+    },
+    {
+      "id": "declarant_eori",
+      "source": "Declarant_EORI",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Declarant EORI",
+      "tab": "parties",
+      "format": "mono",
+      "export": false,
+      "note": "Currently rendered from broker.eori, which is a different party."
+    },
+    {
+      "id": "customs_broker",
+      "source": "CustomsBroker",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "broker.name",
+      "coverage": "partial",
+      "label": "Customs broker",
+      "tab": "parties",
+      "format": "text",
+      "export": true,
+      "note": "broker.eori has no counterpart in the source list."
+    },
+    {
+      "id": "departure_country",
+      "source": "Departure_CountryCode",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "optional",
+        "transit": "expected"
+      },
+      "statesOverridden": [
+        "export"
+      ],
+      "domain": "originCountry",
+      "coverage": "partial",
+      "label": "Country of departure",
+      "tab": "parties",
+      "format": "text",
+      "export": true,
+      "note": "Header-level departure country. The UI also labels this \"Origin country\", which is the line-level Origin_CountryCode — two different things."
+    },
+    {
+      "id": "destination_country",
+      "source": "DestinationCountryCode",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "optional",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "statesOverridden": [
+        "import"
+      ],
+      "domain": "destinationCountry",
+      "coverage": "modelled",
+      "label": "Country of destination",
+      "tab": "parties",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "declaration_country",
+      "source": "DeclarationCountry",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "countryCode",
+      "coverage": "modelled",
+      "label": "Declaration country",
+      "tab": "summary",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "transport_mode",
+      "source": "BorderTransportMeans_ModeCode",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "transportMode",
+      "coverage": "modelled",
+      "label": "Border transport mode",
+      "tab": "parties",
+      "format": "text",
+      "export": false
+    },
+    {
+      "id": "incoterms",
+      "source": "IncoTerms_ConditionCode",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": "incoterms",
+      "coverage": "modelled",
+      "label": "Incoterms",
+      "tab": "summary",
+      "format": "code",
+      "export": true
+    },
+    {
+      "id": "incoterms_location",
+      "source": "IncoTerms_LocationID",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "optional",
+        "transit": "not-applicable"
+      },
+      "statesOverridden": [
+        "export"
+      ],
+      "domain": null,
+      "coverage": "new",
+      "label": "Incoterms place",
+      "tab": "summary",
+      "format": "text",
+      "export": false,
+      "note": "Import-mandatory. Incoterms are meaningless without the named place."
+    },
+    {
+      "id": "line_no",
+      "source": "DeclarationLineNo",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "lines[].lineNo",
+      "coverage": "modelled",
+      "label": "Line",
+      "tab": "goods",
+      "format": "number",
+      "export": true,
+      "note": "Not mandatory on transit — transit lines may be unnumbered."
+    },
+    {
+      "id": "commodity_code",
+      "source": "Commodity_Classification_ID",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "lines[].commodityCode",
+      "coverage": "modelled",
+      "label": "Commodity code",
+      "tab": "goods",
+      "format": "mono",
+      "export": true
+    },
+    {
+      "id": "origin_country",
+      "source": "Origin_CountryCode",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "lines[].originCountry",
+      "coverage": "modelled",
+      "label": "Country of origin",
+      "tab": "goods",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "procedure_code",
+      "source": "Procedure_Code",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].procedure",
+      "coverage": "modelled",
+      "label": "Procedure",
+      "tab": "goods",
+      "format": "code",
+      "export": true
+    },
+    {
+      "id": "duty_regime_code",
+      "source": "DutyTaxFee_DutyRegimeCode",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].preference",
+      "coverage": "modelled",
+      "label": "Preference",
+      "tab": "goods",
+      "format": "code",
+      "export": false
+    },
+    {
+      "id": "gross_mass",
+      "source": "GrossMass",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "lines[].grossKg",
+      "coverage": "modelled",
+      "label": "Gross mass",
+      "tab": "goods",
+      "format": "number",
+      "export": false
+    },
+    {
+      "id": "net_mass",
+      "source": "NetMass",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "lines[].netKg",
+      "coverage": "modelled",
+      "label": "Net mass",
+      "tab": "goods",
+      "format": "number",
+      "export": false
+    },
+    {
+      "id": "article_number",
+      "source": "ArticleNumber",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].sku",
+      "coverage": "modelled",
+      "label": "Article number",
+      "tab": "goods",
+      "format": "mono",
+      "export": false
+    },
+    {
+      "id": "commodity_description",
+      "source": "Commodity_Description",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "lines[].description",
+      "coverage": "modelled",
+      "label": "Description",
+      "tab": "goods",
+      "format": "text",
+      "export": true
+    },
+    {
+      "id": "item_value_currency",
+      "source": "Commodity_ValueAmount_CurrencyID",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Item value currency",
+      "tab": "values",
+      "format": "currency",
+      "export": true,
+      "note": "Per-line currency. The model holds a single Declaration.currency — see the currency finding."
+    },
+    {
+      "id": "declared_fx_rate",
+      "source": "Declaration_RateNumeric",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": "declaredFxToEur",
+      "coverage": "modelled",
+      "label": "Declared conversion rate",
+      "tab": "values",
+      "format": "number",
+      "export": false,
+      "note": "The only rate ever used for EUR equivalents (principle #2). Not mandatory on transit."
+    },
+    {
+      "id": "transport_to_border",
+      "source": "TransportCosts_ToBorder",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].transportCosts",
+      "coverage": "modelled",
+      "label": "Transport costs to border",
+      "tab": "values",
+      "format": "money",
+      "export": false
+    },
+    {
+      "id": "transport_to_border_currency",
+      "source": "TransportCosts_ToBorder_Currency",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Transport (to border) currency",
+      "tab": "values",
+      "format": "currency",
+      "export": false
+    },
+    {
+      "id": "transport_from_border",
+      "source": "TransportCosts_FromBorder",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Transport costs from border",
+      "tab": "values",
+      "format": "money",
+      "export": false,
+      "note": "Post-border transport — excluded from the customs value. Showing it next to the to-border figure prevents a common misreading."
+    },
+    {
+      "id": "transport_from_border_currency",
+      "source": "TransportCosts_FromBorder_Currency",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Transport (from border) currency",
+      "tab": "values",
+      "format": "currency",
+      "export": false
+    },
+    {
+      "id": "vat_base",
+      "source": "TaxBaseAmount",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "VAT base",
+      "tab": "values",
+      "format": "money",
+      "export": false,
+      "note": "The base VAT was charged on. Without it a user cannot check the VAT figure."
+    },
+    {
+      "id": "vat_rate",
+      "source": "TaxRate",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].vatRatePct",
+      "coverage": "modelled",
+      "label": "VAT rate",
+      "tab": "values",
+      "format": "percent",
+      "export": false
+    },
+    {
+      "id": "vat_amount",
+      "source": "Tax_PaymentAmount",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].vatAmount",
+      "coverage": "modelled",
+      "label": "VAT",
+      "tab": "values",
+      "format": "money",
+      "export": true
+    },
+    {
+      "id": "vat_currency",
+      "source": "VATCurrency",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "VAT currency",
+      "tab": "values",
+      "format": "currency",
+      "export": false,
+      "note": "VAT may be denominated separately from the item value."
+    },
+    {
+      "id": "customs_value",
+      "source": "GoodsItem_CustomsValueAmount",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "lines[].customsValue",
+      "coverage": "modelled",
+      "label": "Customs value",
+      "tab": "values",
+      "format": "money",
+      "export": true
+    },
+    {
+      "id": "duty_rate",
+      "source": "DutyRate",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].dutyRatePct",
+      "coverage": "modelled",
+      "label": "Duty rate",
+      "tab": "values",
+      "format": "percent",
+      "export": false
+    },
+    {
+      "id": "duty_amount",
+      "source": "Duty_PaymentAmount",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].dutyAmount",
+      "coverage": "modelled",
+      "label": "Duty",
+      "tab": "values",
+      "format": "money",
+      "export": true
+    },
+    {
+      "id": "duty_currency",
+      "source": "DutyCurrency",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Duty currency",
+      "tab": "values",
+      "format": "currency",
+      "export": false
+    },
+    {
+      "id": "excise_base",
+      "source": "GoodsItem_ExciseValueAmount",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Excise base",
+      "tab": "values",
+      "format": "money",
+      "export": false
+    },
+    {
+      "id": "excise_rate",
+      "source": "ExciseRate",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Excise rate",
+      "tab": "values",
+      "format": "percent",
+      "export": false
+    },
+    {
+      "id": "excise_amount",
+      "source": "Excise_PaymentAmount",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].excise",
+      "coverage": "partial",
+      "label": "Excise",
+      "tab": "values",
+      "format": "money",
+      "export": false,
+      "note": "ValuesTab hard-codes \"Excise: Not applicable\" at declaration level — excise is optional on all three types, so absence is Not available, not Not applicable."
+    },
+    {
+      "id": "excise_currency",
+      "source": "ExciseCurrency",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Excise currency",
+      "tab": "values",
+      "format": "currency",
+      "export": false
+    },
+    {
+      "id": "file_currency",
+      "source": "File Currency",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "File currency",
+      "tab": "values",
+      "format": "currency",
+      "export": false,
+      "note": "A fifth currency alongside item / transport / VAT / duty / excise. Its relationship to the others needs defining before any total can be displayed."
+    },
+    {
+      "id": "declaration_procedure",
+      "source": "DeclarationProcedure",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Declaration procedure",
+      "tab": "summary",
+      "format": "code",
+      "export": false,
+      "note": "Header-level procedure, distinct from the line-level Procedure_Code."
+    },
+    {
+      "id": "customs_id",
+      "source": "Customs ID /MRN",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": null,
+      "coverage": "new",
+      "label": "Customs ID",
+      "tab": "references",
+      "format": "mono",
+      "export": false,
+      "note": "A second MRN-like identifier. Overlap with MRN needs resolving."
+    },
+    {
+      "id": "declaration_no",
+      "source": "DeclarationNo",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "declarationNumber",
+      "coverage": "modelled",
+      "label": "Declaration number",
+      "tab": "references",
+      "format": "mono",
+      "export": true
+    },
+    {
+      "id": "declaration_status_code",
+      "source": "DeclarationStatusCode",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": null,
+      "coverage": "new",
+      "label": "Status code",
+      "tab": "availability",
+      "format": "code",
+      "export": false,
+      "note": "A second status field alongside Declaration_Status. Which one drives the register filter is an open question."
+    },
+    {
+      "id": "order_date",
+      "source": "OrderDate",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Order date",
+      "tab": "summary",
+      "format": "date",
+      "export": false
+    },
+    {
+      "id": "taxation_date",
+      "source": "TaxationDate",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Taxation date",
+      "tab": "values",
+      "format": "date",
+      "export": false,
+      "note": "The date duty and VAT were assessed — the date a finance team reconciles against, and not the same as the clearance date."
+    },
+    {
+      "id": "accepted_date",
+      "source": "AcceptedDate",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": true
+      },
+      "states": {
+        "import": "not-applicable",
+        "export": "not-applicable",
+        "transit": "expected"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Accepted date",
+      "tab": "summary",
+      "format": "date",
+      "export": false,
+      "note": "Transit-mandatory."
+    },
+    {
+      "id": "release_date",
+      "source": "ReleaseDate",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "releaseDate",
+      "coverage": "modelled",
+      "label": "Release date",
+      "tab": "summary",
+      "format": "date",
+      "export": true,
+      "note": "null renders \"Not yet released\", never a blank."
+    },
+    {
+      "id": "exit_office",
+      "source": "ExitOfficeID",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": true
+      },
+      "states": {
+        "import": "not-applicable",
+        "export": "not-applicable",
+        "transit": "expected"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Office of exit",
+      "tab": "parties",
+      "format": "mono",
+      "export": false,
+      "note": "Transit-mandatory. Transit movements are currently the least-modelled type."
+    },
+    {
+      "id": "entry_office",
+      "source": "EntryOfficeID",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": true
+      },
+      "states": {
+        "import": "not-applicable",
+        "export": "not-applicable",
+        "transit": "expected"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Office of entry",
+      "tab": "parties",
+      "format": "mono",
+      "export": false,
+      "note": "Transit-mandatory."
+    },
+    {
+      "id": "presentation_office",
+      "source": "PresentationOffice",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": true
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "expected"
+      },
+      "statesOverridden": [
+        "import",
+        "export"
+      ],
+      "domain": "presentationOffice",
+      "coverage": "partial",
+      "label": "Presentation office",
+      "tab": "parties",
+      "format": "mono",
+      "export": false,
+      "note": "Mandatory on transit only, but the UI shows it unconditionally on every declaration."
+    },
+    {
+      "id": "invoice_amount",
+      "source": "Declaration_InvoiceAmount",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "invoiceTotal",
+      "coverage": "modelled",
+      "label": "Invoice amount",
+      "tab": "values",
+      "format": "money",
+      "export": true,
+      "note": "The only declared header-level money field in the source list."
+    },
+    {
+      "id": "invoice_currency",
+      "source": "Declaration_InvoiceAmount_CurrencyID",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": true
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "expected"
+      },
+      "domain": "currency",
+      "coverage": "partial",
+      "label": "Invoice currency",
+      "tab": "values",
+      "format": "currency",
+      "export": true,
+      "note": "The model treats this as the currency of the whole declaration. The source scopes it to the invoice amount only."
+    },
+    {
+      "id": "payment_terms",
+      "source": "CustomsValuation_PaymentTermsCode",
+      "position": "header",
+      "mandatory": {
+        "import": true,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "not-applicable",
+        "transit": "not-applicable"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Payment terms",
+      "tab": "values",
+      "format": "code",
+      "export": false
+    },
+    {
+      "id": "container_code",
+      "source": "ContainerCode",
+      "position": "header",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "containerNumber",
+      "coverage": "modelled",
+      "label": "Container",
+      "tab": "parties",
+      "format": "mono",
+      "export": false
+    },
+    {
+      "id": "packaging_type",
+      "source": "GoodsItem_Packaging_TypeCode",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "lines[].packagingType",
+      "coverage": "modelled",
+      "label": "Packaging type",
+      "tab": "goods",
+      "format": "code",
+      "export": false
+    },
+    {
+      "id": "package_quantity",
+      "source": "GoodsItem_TotalPackageQuantity",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "optional"
+      },
+      "statesOverridden": [
+        "transit"
+      ],
+      "domain": "lines[].packageQuantity",
+      "coverage": "modelled",
+      "label": "Packages",
+      "tab": "goods",
+      "format": "number",
+      "export": false
+    },
+    {
+      "id": "item_value",
+      "source": "Commodity_ValueAmount",
+      "position": "line",
+      "mandatory": {
+        "import": true,
+        "export": true,
+        "transit": false
+      },
+      "states": {
+        "import": "expected",
+        "export": "expected",
+        "transit": "not-applicable"
+      },
+      "domain": "lines[].itemValue",
+      "coverage": "modelled",
+      "label": "Item value",
+      "tab": "values",
+      "format": "money",
+      "export": true
+    },
+    {
+      "id": "other_duties",
+      "source": "OtherDuties",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Other duties",
+      "tab": "values",
+      "format": "money",
+      "export": false,
+      "note": "Anti-dumping and countervailing duties land here. Omitting it understates what was actually paid."
+    },
+    {
+      "id": "additional_references",
+      "source": "AdditionalReferences",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].additionalReference",
+      "coverage": "modelled",
+      "label": "Additional references",
+      "tab": "references",
+      "format": "mono",
+      "export": false
+    },
+    {
+      "id": "due_diligence_statements",
+      "source": "Due Diligence Statements",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Due-diligence statement",
+      "tab": "references",
+      "format": "mono",
+      "export": false,
+      "note": "ReferencesTab already renders this as \"Not available\" and says the feed does not supply it. The source list says it will — the copy needs updating when it lands."
+    },
+    {
+      "id": "tariff_quantity",
+      "source": "TariffQuantity",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].supplementaryUnits",
+      "coverage": "modelled",
+      "label": "Supplementary units",
+      "tab": "goods",
+      "format": "text",
+      "export": false
+    },
+    {
+      "id": "quota_order_id",
+      "source": "QuotaOrderID",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].quotaReference",
+      "coverage": "modelled",
+      "label": "Quota order number",
+      "tab": "goods",
+      "format": "mono",
+      "export": false
+    },
+    {
+      "id": "line_transport_equipment",
+      "source": "GoodsItem_TransportEquipmentID",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Transport equipment",
+      "tab": "goods",
+      "format": "mono",
+      "export": false,
+      "note": "Line-level container id, alongside the header-level ContainerCode."
+    },
+    {
+      "id": "transaction_nature",
+      "source": "TransactionNatureCode",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Nature of transaction",
+      "tab": "goods",
+      "format": "code",
+      "export": false
+    },
+    {
+      "id": "discounts_deductions",
+      "source": "OtherDiscounts_Deductions",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": null,
+      "coverage": "new",
+      "label": "Discounts and deductions",
+      "tab": "values",
+      "format": "money",
+      "export": false,
+      "note": "ValuesTab hard-codes \"Deductions: None declared\". The source has a real field for this, so the hard-coded copy asserts something unproven."
+    },
+    {
+      "id": "ucr",
+      "source": "UCR_TraderAssignedReferenceID",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "ucr",
+      "coverage": "partial",
+      "label": "UCR",
+      "tab": "references",
+      "format": "mono",
+      "export": false,
+      "note": "Line-level in the source, header-level in the model. A declaration may carry several UCRs."
+    },
+    {
+      "id": "insurance_additions",
+      "source": "InsuranceCosts_Additions",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].insuranceCosts",
+      "coverage": "modelled",
+      "label": "Insurance and additions",
+      "tab": "values",
+      "format": "money",
+      "export": false
+    },
+    {
+      "id": "article_quantity",
+      "source": "Article Quantity",
+      "position": "line",
+      "mandatory": {
+        "import": false,
+        "export": false,
+        "transit": false
+      },
+      "states": {
+        "import": "optional",
+        "export": "optional",
+        "transit": "optional"
+      },
+      "domain": "lines[].quantity",
+      "coverage": "modelled",
+      "label": "Quantity",
+      "tab": "goods",
+      "format": "number",
+      "export": true
+    }
+  ]
+}
