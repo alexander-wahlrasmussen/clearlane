@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<meta name="ext-resource-dependency" content="customs-data.js" data-resource-id="customs-data" />
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#F5F6F8">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" fill="#F5F6F8"/><rect x="48" y="48" width="24" height="24" rx="5" fill="#1E5A8A" transform="rotate(45 60 60)"/></svg>
+</template>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#F5F6F8;color:#1D1F21;}
+*{box-sizing:border-box;}
+a{color:#1E5A8A;text-decoration:none;}a:hover{color:#17466C;text-decoration:underline;}
+button{font-family:inherit;}
+@keyframes ciSpin{to{transform:rotate(360deg);}}
+@keyframes ciPulse{0%,100%{opacity:.45;}50%{opacity:1;}}
+@keyframes ciIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
+::selection{background:#CFE0EF;}
+</style>
+</helmet>
+<div style="font-family:'Instrument Sans',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;background:#F5F6F8;color:#1D1F21;min-width:1024px;font-size:14px;overflow:hidden;">
+
+  <sc-if value="{{err}}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;" data-screen-label="Error">
+      <div style="background:#fff;border:1px solid #E1E4E8;border-radius:8px;padding:36px 44px;max-width:460px;text-align:center;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#FBEAE9;color:#B3261E;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-weight:700;">!</div>
+        <div style="font-size:17px;font-weight:600;margin-bottom:6px;">We could not load your declaration data</div>
+        <div style="font-size:13px;color:#5F6368;line-height:1.5;margin-bottom:18px;">Your declarations are safe. This is a temporary problem retrieving them — please try again.</div>
+        <button onClick="{{retry}}" style="background:#1E5A8A;color:#fff;border:none;border-radius:5px;height:34px;padding:0 18px;font-size:13px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;">Try again</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{loading}}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;" data-screen-label="Loading">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:18px;height:18px;background:#1E5A8A;transform:rotate(45deg);border-radius:3px;"></div>
+        <div style="font-size:17px;font-weight:600;letter-spacing:-0.01em;">Customs Insights</div>
+      </div>
+      <div style="width:26px;height:26px;border:3px solid #D9E3EE;border-top-color:#1E5A8A;border-radius:50%;animation:ciSpin 0.8s linear infinite;"></div>
+      <div style="font-size:12.5px;color:#5F6368;animation:ciPulse 1.6s ease infinite;">Loading declaration data…</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ready}}" hint-placeholder-val="{{ false }}">
+    <div style="height:54px;background:#fff;border-bottom:1px solid #E1E4E8;display:flex;align-items:center;gap:16px;padding:0 20px;flex-shrink:0;position:relative;z-index:20;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:15px;height:15px;background:#1E5A8A;transform:rotate(45deg);border-radius:2.5px;"></div>
+        <div style="font-size:15px;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;">Customs Insights</div>
+        <span style="font-size:9.5px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;border:1px solid #C9DBEA;background:#E9F0F7;color:#174A73;border-radius:9px;padding:2px 8px;">AI concept</span>
+      </div>
+      <div style="width:1px;height:24px;background:#E1E4E8;"></div>
+      <div style="display:flex;gap:2px;height:54px;align-items:stretch;">
+        <button onClick="{{goAsk}}" style="border:none;background:none;font:inherit;font-size:13.5px;padding:0 14px;cursor:pointer;{{tabAsk}}">Ask</button>
+        <button onClick="{{goDecls}}" style="border:none;background:none;font:inherit;font-size:13.5px;padding:0 14px;cursor:pointer;{{tabDe}}">Declarations</button>
+      </div>
+      <div style="flex:1;"></div>
+      <sc-if value="{{repBtnShow}}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{reportOpen}}" style="height:32px;padding:0 14px;border:1px solid #1E5A8A;border-radius:5px;background:#fff;color:#174A73;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;" style-hover="background:#E9F0F7;">Draft report ({{repN}})</button>
+      </sc-if>
+      <div style="font-size:12px;color:#5F6368;white-space:nowrap;">Data refreshed <strong style="color:#1D1F21;">26 Aug 2026, 06:15 UTC</strong></div>
+      <div aria-label="Astrid Lindqvist" style="width:34px;height:34px;border-radius:50%;background:#1E5A8A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;">AL</div>
+    </div>
+
+    <main style="flex:1;overflow-y:auto;min-width:0;">
+      <sc-if value="{{scrAsk}}" hint-placeholder-val="{{ true }}">
+      <div data-screen-label="Ask" style="max-width:940px;margin:0 auto;padding:26px 24px 60px;">
+
+        <div style="background:#fff;border:1px solid #D9E3EE;border-radius:10px;padding:18px 20px;box-shadow:0 2px 10px rgba(30,90,138,0.06);">
+          <div style="display:flex;gap:10px;">
+            <input value="{{q}}" onChange="{{setQV}}" onKeyDown="{{qKey}}" placeholder="Ask about your declarations — e.g. How much duty did we pay in Germany since June?" aria-label="Ask about your customs data" style="height:44px;flex:1;padding:0 14px;border:1px solid #C9D4DE;border-radius:7px;font:inherit;font-size:14.5px;" style-focus="outline:2px solid #1E5A8A;outline-offset:1px;">
+            <button onClick="{{askGo}}" style="height:44px;padding:0 22px;border:none;border-radius:7px;background:#1E5A8A;color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;">Ask</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">
+            <span style="font-size:11.5px;color:#8A8D91;">Try:</span>
+            <sc-for list="{{sugg}}" as="s" hint-placeholder-count="4">
+              <button onClick="{{suggGo}}" data-q="{{s}}" style="border:1px solid #D9E3EE;background:#F7FAFC;color:#174A73;border-radius:13px;padding:4px 12px;font:inherit;font-size:11.5px;cursor:pointer;" style-hover="background:#E9F0F7;">{{s}}</button>
+            </sc-for>
+          </div>
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid #EDF1F5;font-size:11.5px;color:#5F6368;display:flex;align-items:center;gap:6px;">
+            <span style="color:#1E7A46;font-weight:700;">&#10003;</span> AI interprets your question — every number is computed directly from your declaration data. Nothing is estimated.
+          </div>
+        </div>
+
+        <sc-if value="{{brShow}}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px;">
+            <div style="display:flex;align-items:baseline;gap:10px;">
+              <div style="font-size:14px;font-weight:700;">Morning briefing</div>
+              <div style="font-size:11.5px;color:#8A8D91;">Computed from today's refresh · 26 Aug 2026, 06:15 UTC</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;">
+              <sc-for list="{{briefs}}" as="b" hint-placeholder-count="4">
+                <div style="background:#fff;border:1px solid #E1E4E8;border-radius:8px;padding:13px 15px;display:flex;flex-direction:column;gap:6px;">
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="width:8px;height:8px;border-radius:50%;background:{{b.dot}};flex-shrink:0;"></span>
+                    <div style="font-size:13px;font-weight:600;flex:1;">{{b.title}}</div>
+                    <button onClick="{{brX}}" data-k="{{b.k}}" title="Dismiss" style="border:none;background:none;color:#A9ACB0;font-size:13px;cursor:pointer;padding:2px;" style-hover="color:#1D1F21;">&#10005;</button>
+                  </div>
+                  <div style="font-size:12px;color:#5F6368;line-height:1.5;">{{b.detail}}</div>
+                  <div><button onClick="{{suggGo}}" data-q="{{b.q}}" style="border:none;background:none;color:#1E5A8A;font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:0;" style-hover="text-decoration:underline;">Ask about this &#8594;</button></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{feedShow}}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;margin-top:22px;">
+            <sc-for list="{{cards}}" as="c" hint-placeholder-count="2">
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:10px;overflow:hidden;animation:ciIn 0.25s ease;">
+                <div style="display:flex;align-items:center;gap:10px;padding:13px 18px 0;">
+                  <div style="font-size:14.5px;font-weight:600;flex:1;min-width:0;">&#8220;{{c.q}}&#8221;</div>
+                  <button onClick="{{repT}}" data-id="{{c.id}}" style="height:26px;padding:0 11px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;cursor:pointer;white-space:nowrap;{{c.repCss}}" style-hover="background:#F1F4F4;">{{c.repLbl}}</button>
+                  <button onClick="{{cardX}}" data-id="{{c.id}}" title="Remove answer" style="border:none;background:none;color:#A9ACB0;font-size:14px;cursor:pointer;padding:2px;" style-hover="color:#1D1F21;">&#10005;</button>
+                </div>
+
+                <sc-if value="{{c.pending}}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:10px;padding:18px;color:#5F6368;font-size:12.5px;">
+                    <div style="width:16px;height:16px;border:2.5px solid #D9E3EE;border-top-color:#1E5A8A;border-radius:50%;animation:ciSpin 0.8s linear infinite;"></div>
+                    <span style="animation:ciPulse 1.4s ease infinite;">Interpreting your question and computing from source data…</span>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{c.done}}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 18px;margin-top:8px;background:#F8FAFC;border-top:1px solid #EDF1F5;border-bottom:1px solid #EDF1F5;">
+                    <span style="font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#8A8D91;">Understood as</span>
+                    <sc-if value="{{c.edit}}" hint-placeholder-val="{{ true }}">
+                      <select value="{{c.iMetric}}" onChange="{{chipSet}}" data-id="{{c.id}}" name="metric" aria-label="Metric" style="height:26px;padding:0 6px;border:1px solid #C9DBEA;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#174A73;font-weight:600;">
+                        <option value="value">Customs value</option><option value="duty">Duty</option><option value="vat">VAT</option><option value="dutyvat">Duty + VAT</option><option value="count">Declaration count</option>
+                      </select>
+                      <select value="{{c.iPeriod}}" onChange="{{chipSet}}" data-id="{{c.id}}" name="period" aria-label="Period" style="height:26px;padding:0 6px;border:1px solid #C9DBEA;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#174A73;font-weight:600;">
+                        <option value="all">All available (Mar–Aug)</option><option value="f04">Since Apr</option><option value="f05">Since May</option><option value="f06">Since Jun (last 3 months)</option><option value="f07">Since Jul (Q3 to date)</option><option value="q2">Q2 (Apr–Jun)</option><option value="m08">Aug 2026</option><option value="m07">Jul 2026</option><option value="m06">Jun 2026</option><option value="m05">May 2026</option><option value="m04">Apr 2026</option><option value="m03">Mar 2026</option>
+                      </select>
+                      <select value="{{c.iCountry}}" onChange="{{chipSet}}" data-id="{{c.id}}" name="country" aria-label="Declaration country" style="height:26px;padding:0 6px;border:1px solid #C9DBEA;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#174A73;font-weight:600;">
+                        <option value="all">All countries</option>
+                        <sc-for list="{{countryOpts}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+                      </select>
+                      <select value="{{c.iType}}" onChange="{{chipSet}}" data-id="{{c.id}}" name="type" aria-label="Declaration type" style="height:26px;padding:0 6px;border:1px solid #C9DBEA;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#174A73;font-weight:600;">
+                        <option value="all">All types</option><option value="import">Imports</option><option value="export">Exports</option><option value="transit">Transit</option>
+                      </select>
+                      <select value="{{c.iGroup}}" onChange="{{chipSet}}" data-id="{{c.id}}" name="group" aria-label="Breakdown" style="height:26px;padding:0 6px;border:1px solid #C9DBEA;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#174A73;font-weight:600;">
+                        <option value="none">Total only</option><option value="country">By country</option><option value="month">By month</option><option value="commodity">By commodity</option><option value="type">By type</option>
+                      </select>
+                      <sc-if value="{{c.goodsShow}}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-flex;align-items:center;gap:6px;height:26px;border:1px solid #C9DBEA;background:#fff;border-radius:5px;padding:0 8px;font-size:11.5px;color:#174A73;font-weight:600;">Goods: {{c.goodsLbl}} <button onClick="{{gX}}" data-id="{{c.id}}" title="Remove goods filter" style="border:none;background:none;color:#8A8D91;cursor:pointer;padding:0;font-size:11px;" style-hover="color:#1D1F21;">&#10005;</button></span>
+                      </sc-if>
+                      <sc-if value="{{c.originShow}}" hint-placeholder-val="{{ false }}">
+                        <span style="display:inline-flex;align-items:center;gap:6px;height:26px;border:1px solid #C9DBEA;background:#fff;border-radius:5px;padding:0 8px;font-size:11.5px;color:#174A73;font-weight:600;">Origin: {{c.originLbl}} <button onClick="{{oX}}" data-id="{{c.id}}" title="Remove origin filter" style="border:none;background:none;color:#8A8D91;cursor:pointer;padding:0;font-size:11px;" style-hover="color:#1D1F21;">&#10005;</button></span>
+                      </sc-if>
+                    </sc-if>
+                    <sc-if value="{{c.textMode}}" hint-placeholder-val="{{ false }}">
+                      <span style="font-size:12px;color:#3A3D40;font-weight:600;">{{c.interpText}}</span>
+                    </sc-if>
+                    <span style="flex:1;"></span>
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:#1E7A46;background:#E9F5EC;border:1px solid #CBE7D3;border-radius:10px;padding:2px 9px;white-space:nowrap;">&#10003; Computed from source data</span>
+                    <sc-if value="{{c.low}}" hint-placeholder-val="{{ false }}">
+                      <span style="display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:600;color:#9A5B00;background:#FDF3E1;border:1px solid #F0DFC0;border-radius:10px;padding:2px 9px;white-space:nowrap;">Check interpretation</span>
+                    </sc-if>
+                  </div>
+                  <sc-if value="{{c.low}}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:8px 18px;background:#FDF6E9;border-bottom:1px solid #F0DFC0;font-size:12px;color:#8A5B10;">{{c.confMsg}}</div>
+                  </sc-if>
+
+                  <div style="padding:16px 18px;">
+                    <sc-if value="{{c.empty}}" hint-placeholder-val="{{ false }}">
+                      <div style="font-size:13px;color:#5F6368;">No declarations match this interpretation. Adjust the filters above — data begins 1 March 2026.</div>
+                    </sc-if>
+
+                    <sc-if value="{{c.agg}}" hint-placeholder-val="{{ true }}">
+                      <div style="font-size:27px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;">{{c.head}}</div>
+                      <div style="font-size:12px;color:#5F6368;margin-top:3px;">{{c.sub}}</div>
+                      <sc-if value="{{c.rowsShow}}" hint-placeholder-val="{{ true }}">
+                        <div style="font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#8A8D91;margin:16px 0 8px;">{{c.rowsTitle}}</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                          <sc-for list="{{c.rows}}" as="r" hint-placeholder-count="4">
+                            <div style="display:grid;grid-template-columns:190px 1fr 150px;gap:12px;align-items:center;">
+                              <div style="font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{r.label}}">{{r.label}}</div>
+                              <div style="height:14px;background:#EEF2F6;border-radius:3px;overflow:hidden;"><div style="height:100%;background:#5B8AB5;border-radius:3px;width:{{r.w}};"></div></div>
+                              <div style="font-size:12.5px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap;">{{r.val}} <span style="color:#8A8D91;">{{r.pct}}</span></div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </sc-if>
+
+                    <sc-if value="{{c.cmpShow}}" hint-placeholder-val="{{ false }}">
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+                        <div>
+                          <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">{{c.aLbl}}</div>
+                          <div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;">{{c.aVal}}</div>
+                          <div style="height:14px;background:#EEF2F6;border-radius:3px;overflow:hidden;margin-top:8px;"><div style="height:100%;background:#5B8AB5;border-radius:3px;width:{{c.aW}};"></div></div>
+                          <div style="font-size:11.5px;color:#8A8D91;margin-top:5px;">{{c.aSub}}</div>
+                        </div>
+                        <div>
+                          <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">{{c.bLbl}}</div>
+                          <div style="font-size:24px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:3px;">{{c.bVal}}</div>
+                          <div style="height:14px;background:#EEF2F6;border-radius:3px;overflow:hidden;margin-top:8px;"><div style="height:100%;background:#274F74;border-radius:3px;width:{{c.bW}};"></div></div>
+                          <div style="font-size:11.5px;color:#8A8D91;margin-top:5px;">{{c.bSub}}</div>
+                        </div>
+                      </div>
+                      <div style="margin-top:12px;font-size:12.5px;font-weight:600;{{c.deltaCss}}">{{c.deltaTxt}}</div>
+                    </sc-if>
+
+                    <sc-if value="{{c.listShow}}" hint-placeholder-val="{{ false }}">
+                      <div style="font-size:15px;font-weight:700;">{{c.head}}</div>
+                      <div style="border:1px solid #EDF1F5;border-radius:6px;overflow:hidden;margin-top:10px;">
+                        <div style="display:grid;grid-template-columns:170px 92px 118px 1fr 130px;background:#F9FAFB;border-bottom:1px solid #E1E4E8;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">
+                          <div style="padding:7px 10px;">MRN</div><div style="padding:7px 10px;">Date</div><div style="padding:7px 10px;">Country</div><div style="padding:7px 10px;">Why it is listed</div><div style="padding:7px 10px;text-align:right;">Customs value</div>
+                        </div>
+                        <sc-for list="{{c.lrows}}" as="lr" hint-placeholder-count="3">
+                          <div onClick="{{openRow}}" data-id="{{lr.id}}" role="button" tabIndex="0" style="display:grid;grid-template-columns:170px 92px 118px 1fr 130px;border-bottom:1px solid #F1F3F5;font-size:12px;align-items:center;cursor:pointer;background:#fff;" style-hover="background:#F1F4F4;">
+                            <div style="padding:7px 10px;font-family:'Spline Sans Mono',monospace;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{lr.mrn}}</div>
+                            <div style="padding:7px 10px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{lr.date}}</div>
+                            <div style="padding:7px 10px;white-space:nowrap;">{{lr.country}}</div>
+                            <div style="padding:7px 10px;color:#8A5B10;">{{lr.reason}}</div>
+                            <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{lr.val}}</div>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+
+                  <div style="display:flex;align-items:center;gap:14px;padding:9px 18px;border-top:1px solid #EDF1F5;background:#FBFCFD;font-size:11.5px;color:#5F6368;flex-wrap:wrap;">
+                    <span>Computed from <strong style="color:#1D1F21;">{{c.n}}</strong> declarations</span>
+                    <button onClick="{{openEvid}}" data-id="{{c.id}}" style="border:none;background:none;color:#1E5A8A;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;padding:0;" style-hover="text-decoration:underline;">View underlying declarations &#8594;</button>
+                    <span style="flex:1;"></span>
+                    <span>{{c.note}}</span>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{feedEmpty}}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:22px;border:1px dashed #D5D9DE;border-radius:10px;padding:36px;text-align:center;color:#8A8D91;font-size:13px;">Answers you ask for will appear here. Each one stays on the canvas until you remove it, and can be added to a report draft.</div>
+        </sc-if>
+      </div>
+      </sc-if>
+
+      <sc-if value="{{scrDe}}" hint-placeholder-val="{{ false }}">
+      <div data-screen-label="Declarations" style="padding:22px 26px 40px;">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <h1 style="font-size:21px;font-weight:700;letter-spacing:-0.01em;margin:0;">Declarations</h1>
+          <div style="font-size:12.5px;color:#5F6368;font-variant-numeric:tabular-nums;">{{regCount}} declarations</div>
+        </div>
+        <div style="margin-top:12px;background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+          <input value="{{regF.q}}" onChange="{{regQ}}" placeholder="Search by MRN or customer reference…" aria-label="Search declarations" style="height:31px;flex:1;min-width:220px;max-width:340px;padding:0 10px;border:1px solid #D5D9DE;border-radius:5px;font:inherit;font-size:12.5px;" style-focus="outline:2px solid #1E5A8A;outline-offset:1px;">
+          <select value="{{regF.country}}" onChange="{{regSet}}" name="country" aria-label="Country" style="height:31px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;">
+            <option value="all">All countries</option>
+            <sc-for list="{{countryOpts}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+          </select>
+          <select value="{{regF.type}}" onChange="{{regSet}}" name="type" aria-label="Type" style="height:31px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;">
+            <option value="all">All types</option><option value="import">Import</option><option value="export">Export</option><option value="transit">Transit</option>
+          </select>
+          <sc-if value="{{regChip}}" hint-placeholder-val="{{ false }}">
+            <span style="display:inline-flex;align-items:center;gap:6px;background:#E9F0F7;color:#174A73;border:1px solid #C9DBEA;border-radius:12px;padding:3px 10px;font-size:11.5px;font-weight:600;">From answer: {{regChipLbl}} <button onClick="{{regClear}}" title="Show all declarations" style="border:none;background:none;color:#174A73;cursor:pointer;padding:0;font-size:11px;">&#10005;</button></span>
+          </sc-if>
+        </div>
+        <div style="margin-top:12px;background:#fff;border:1px solid #E1E4E8;border-radius:6px;overflow:hidden;">
+          <div style="display:grid;grid-template-columns:150px 190px 105px 130px 82px 1fr 130px 115px 115px;background:#F9FAFB;border-bottom:1px solid #E1E4E8;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">
+            <div style="padding:8px 10px;">Status</div><div style="padding:8px 10px;">MRN</div><div style="padding:8px 10px;">Cleared</div><div style="padding:8px 10px;">Country</div><div style="padding:8px 10px;">Type</div><div style="padding:8px 10px;">Importer / buyer</div><div style="padding:8px 10px;text-align:right;">Customs value</div><div style="padding:8px 10px;text-align:right;">Duty</div><div style="padding:8px 10px;text-align:right;">VAT</div>
+          </div>
+          <sc-for list="{{regRows}}" as="r" hint-placeholder-count="10">
+            <div onClick="{{openRow}}" data-id="{{r.id}}" role="button" tabIndex="0" style="display:grid;grid-template-columns:150px 190px 105px 130px 82px 1fr 130px 115px 115px;background:#fff;border-bottom:1px solid #F1F3F5;font-size:12.5px;cursor:pointer;align-items:center;" style-hover="background:#F1F4F4;" style-focus="outline:2px solid #1E5A8A;outline-offset:-2px;">
+              <div style="padding:7px 10px;"><span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{r.dot}};flex-shrink:0;"></span>{{r.status}}</span></div>
+              <div style="padding:7px 10px;font-family:'Spline Sans Mono',monospace;font-size:11.5px;white-space:nowrap;">{{r.mrn}}</div>
+              <div style="padding:7px 10px;white-space:nowrap;font-variant-numeric:tabular-nums;">{{r.date}}</div>
+              <div style="padding:7px 10px;white-space:nowrap;">{{r.country}}</div>
+              <div style="padding:7px 10px;">{{r.type}}</div>
+              <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{r.importer}}</div>
+              <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{r.val}}</div>
+              <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{r.duty}}</div>
+              <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{r.vat}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:11.5px;color:#8A8D91;margin-top:10px;">Amounts are shown in the currency declared on each declaration. The full declaration register with all columns and export lives in the MVP prototype.</div>
+      </div>
+      </sc-if>
+    </main>
+
+    <sc-if value="{{evid}}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{evidClose}}" style="position:fixed;inset:0;background:rgba(29,31,33,0.30);z-index:50;"></div>
+      <div data-screen-label="Underlying declarations" style="position:fixed;top:0;right:0;bottom:0;width:520px;background:#fff;z-index:51;box-shadow:-12px 0 32px rgba(29,31,33,0.14);display:flex;flex-direction:column;">
+        <div style="padding:16px 20px;border-bottom:1px solid #E1E4E8;display:flex;align-items:flex-start;gap:10px;">
+          <div style="flex:1;">
+            <div style="font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#8A8D91;">Underlying declarations</div>
+            <div style="font-size:14px;font-weight:600;margin-top:3px;">&#8220;{{evTitle}}&#8221;</div>
+            <div style="font-size:11.5px;color:#5F6368;margin-top:3px;">{{evCount}} declarations were used to compute this answer — every one is listed.</div>
+          </div>
+          <button onClick="{{evidClose}}" title="Close" style="border:none;background:none;color:#A9ACB0;font-size:15px;cursor:pointer;padding:2px;" style-hover="color:#1D1F21;">&#10005;</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;">
+          <sc-for list="{{evRows}}" as="e" hint-placeholder-count="6">
+            <div onClick="{{openRow}}" data-id="{{e.id}}" role="button" tabIndex="0" style="display:flex;align-items:center;gap:12px;padding:9px 20px;border-bottom:1px solid #F1F3F5;cursor:pointer;background:#fff;" style-hover="background:#F1F4F4;">
+              <span style="width:7px;height:7px;border-radius:50%;background:{{e.dot}};flex-shrink:0;"></span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{e.mrn}}</div>
+                <div style="font-size:11px;color:#8A8D91;margin-top:1px;">{{e.meta}}</div>
+              </div>
+              <div style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;white-space:nowrap;">{{e.val}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="padding:14px 20px;border-top:1px solid #E1E4E8;">
+          <button onClick="{{evidToReg}}" style="width:100%;height:34px;border:1px solid #1E5A8A;border-radius:6px;background:#fff;color:#174A73;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;" style-hover="background:#E9F0F7;">Open these in the Declarations tab &#8594;</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{drawer}}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{drawerClose}}" style="position:fixed;inset:0;background:rgba(29,31,33,0.30);z-index:60;"></div>
+      <div data-screen-label="Declaration detail" style="position:fixed;top:0;right:0;bottom:0;width:600px;background:#fff;z-index:61;box-shadow:-12px 0 32px rgba(29,31,33,0.14);display:flex;flex-direction:column;">
+        <div style="padding:16px 22px;border-bottom:1px solid #E1E4E8;display:flex;align-items:center;gap:10px;">
+          <span style="font-family:'Spline Sans Mono',monospace;font-size:15px;font-weight:600;">{{dw.mrn}}</span>
+          <span style="display:inline-flex;align-items:center;gap:6px;background:#F2F3F5;border:1px solid #E1E4E8;border-radius:12px;padding:2px 10px;font-size:11.5px;font-weight:600;"><span style="width:7px;height:7px;border-radius:50%;background:{{dw.dot}};"></span>{{dw.status}}</span>
+          <span style="flex:1;"></span>
+          <button onClick="{{drawerClose}}" title="Close" style="border:none;background:none;color:#A9ACB0;font-size:15px;cursor:pointer;padding:2px;" style-hover="color:#1D1F21;">&#10005;</button>
+        </div>
+        <div style="flex:1;overflow-y:auto;padding:18px 22px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px 20px;">
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Type</div><div style="font-size:12.5px;margin-top:2px;">{{dw.type}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Country</div><div style="font-size:12.5px;margin-top:2px;">{{dw.country}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Cleared</div><div style="font-size:12.5px;margin-top:2px;font-variant-numeric:tabular-nums;">{{dw.date}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Customer reference</div><div style="font-size:12.5px;margin-top:2px;font-family:'Spline Sans Mono',monospace;">{{dw.ref}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Importer / buyer</div><div style="font-size:12.5px;margin-top:2px;">{{dw.importer}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Exporter / seller</div><div style="font-size:12.5px;margin-top:2px;">{{dw.exporter}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Customs value</div><div style="font-size:14px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;">{{dw.val}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Duty</div><div style="font-size:14px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;">{{dw.duty}}</div></div>
+            <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">VAT</div><div style="font-size:14px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums;">{{dw.vat}}</div></div>
+          </div>
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:#8A8D91;margin:20px 0 8px;">Goods lines</div>
+          <div style="border:1px solid #EDF1F5;border-radius:6px;overflow:hidden;">
+            <div style="display:grid;grid-template-columns:38px 100px 1fr 110px 95px 95px;background:#F9FAFB;border-bottom:1px solid #E1E4E8;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">
+              <div style="padding:7px 8px;">No</div><div style="padding:7px 8px;">Commodity</div><div style="padding:7px 8px;">Description</div><div style="padding:7px 8px;text-align:right;">Customs value</div><div style="padding:7px 8px;text-align:right;">Duty</div><div style="padding:7px 8px;text-align:right;">VAT</div>
+            </div>
+            <sc-for list="{{dwLines}}" as="l" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:38px 100px 1fr 110px 95px 95px;border-bottom:1px solid #F1F3F5;font-size:12px;align-items:center;">
+                <div style="padding:7px 8px;font-variant-numeric:tabular-nums;">{{l.no}}</div>
+                <div style="padding:7px 8px;font-family:'Spline Sans Mono',monospace;font-size:11px;white-space:nowrap;">{{l.code}}</div>
+                <div style="padding:7px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{l.desc}}</div>
+                <div style="padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{l.customs}}</div>
+                <div style="padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{l.duty}}</div>
+                <div style="padding:7px 8px;text-align:right;font-variant-numeric:tabular-nums;">{{l.vat}}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:11.5px;color:#8A8D91;margin-top:10px;">Amounts in {{dw.cur}} as declared. The full declaration view — parties, references, data availability — lives in the MVP prototype.</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{repOpen}}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(29,31,33,0.38);z-index:70;display:flex;align-items:center;justify-content:center;">
+        <div data-screen-label="Report draft" style="background:#fff;border-radius:10px;width:680px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(29,31,33,0.22);">
+          <div style="padding:18px 24px;border-bottom:1px solid #E1E4E8;">
+            <div style="font-size:16px;font-weight:700;">Report draft — compiled from your answers</div>
+            <div style="font-size:12px;color:#5F6368;margin-top:3px;">Narrative is generated from the computed figures only. Numbers are never rephrased or rounded differently from the answer cards.</div>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:18px 24px;">
+            <sc-for list="{{reps}}" as="s" hint-placeholder-count="2">
+              <div style="border:1px solid #EDF1F5;border-radius:8px;padding:14px 16px;margin-bottom:12px;">
+                <div style="font-size:13px;font-weight:700;">{{s.title}}</div>
+                <div style="font-size:12.5px;line-height:1.6;color:#3A3D40;margin-top:6px;">{{s.text}}</div>
+                <sc-if value="{{s.rowsShow}}" hint-placeholder-val="{{ false }}">
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:4px 16px;font-size:12px;margin-top:10px;padding-top:8px;border-top:1px solid #F1F3F5;">
+                    <sc-for list="{{s.rows}}" as="r" hint-placeholder-count="3">
+                      <div style="color:#6B6E72;">{{r.label}}</div><div style="text-align:right;font-variant-numeric:tabular-nums;">{{r.val}}</div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:14px 24px;border-top:1px solid #E1E4E8;display:flex;justify-content:flex-end;gap:10px;">
+            <button onClick="{{reportClose}}" style="height:33px;padding:0 14px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;cursor:pointer;" style-hover="background:#F1F4F4;">Close</button>
+            <button onClick="{{reportDl}}" style="height:33px;padding:0 16px;border:none;border-radius:5px;background:#1E5A8A;color:#fff;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;">Download draft (HTML)</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1D1F21;color:#F5F6F8;font-size:12.5px;padding:10px 18px;border-radius:6px;z-index:80;box-shadow:0 8px 24px rgba(29,31,33,0.3);">{{toast}}</div>
+    </sc-if>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;seedAnswers&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Example answers pinned&quot;,&quot;Fresh session&quot;],&quot;default&quot;:&quot;Example answers pinned&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Demo&quot;},&quot;briefing&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Demo&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, err: false, tab: 'ask', q: '', feed: [], seq: 1, dis: {},
+    evid: null, drawerId: null, regF: { country: 'all', type: 'all', q: '' }, regIds: null, regLbl: '',
+    repOpen: false, toast: null,
+  };
+  componentDidMount() { this.load(); }
+  load = () => {
+    this.setState({ err: false, ready: false });
+    const dataSrc = (window.__resources && window.__resources['customs-data']) || new URL('customs-data.js', location.href).href;
+    Promise.all([import(dataSrc), new Promise(r => setTimeout(r, 600))])
+      .then(([m]) => { this.D = m; this.setState({ ready: true }, () => this.seed()); })
+      .catch(e => { console.error('Data load failed', e); this.setState({ err: true }); });
+  };
+  retry = () => this.load();
+  seed() {
+    if ((this.props.seedAnswers ?? 'Example answers pinned') !== 'Example answers pinned') return;
+    if (this.state.feed.length) return;
+    this.pushQ('Compare Q2 vs Q3 customs value', true);
+    this.pushQ('Duty paid by country over the last 3 months', true);
+  }
+  // ---- period definitions ----
+  PD = (() => {
+    const M = { m03: ['2026-03-01', '2026-03-31', 'Mar 2026'], m04: ['2026-04-01', '2026-04-30', 'Apr 2026'], m05: ['2026-05-01', '2026-05-31', 'May 2026'], m06: ['2026-06-01', '2026-06-30', 'Jun 2026'], m07: ['2026-07-01', '2026-07-31', 'Jul 2026'], m08: ['2026-08-01', '2026-08-31', 'Aug 2026'] };
+    const F = { all: ['2026-03-01', '2026-08-31', 'Mar–Aug 2026 (all available)'], f04: ['2026-04-01', '2026-08-31', 'Apr–Aug 2026'], f05: ['2026-05-01', '2026-08-31', 'May–Aug 2026'], f06: ['2026-06-01', '2026-08-31', 'Jun–Aug 2026'], f07: ['2026-07-01', '2026-08-31', 'Jul–Aug 2026 (Q3 to date)'], q2: ['2026-04-01', '2026-06-30', 'Q2 2026 (Apr–Jun)'] };
+    const o = {}; Object.entries({ ...M, ...F }).forEach(([k, v]) => o[k] = { from: v[0], to: v[1], label: v[2] }); return o;
+  })();
+  CTY = [['GB', 'united kingdom', 'uk', 'britain'], ['DE', 'germany', 'german'], ['NL', 'netherlands', 'dutch'], ['SE', 'sweden', 'swedish'], ['BE', 'belgium', 'belgian'], ['DK', 'denmark', 'danish'], ['ES', 'spain', 'spanish'], ['NO', 'norway', 'norwegian']];
+  ORG = [['CN', 'china', 'chinese'], ['VN', 'vietnam'], ['TR', 'türkiye', 'turkiye', 'turkey'], ['IN', 'india'], ['US', 'united states', 'usa', 'america'], ['KR', 'korea'], ['JP', 'japan']];
+  GDS = [
+    ['textiles & apparel', /^(61|42)/, ['textile', 'textiles', 'apparel', 'clothing', 'garment', 'garments', 't-shirts', 'tshirts', 'shirts', 'bags', 'cotton']],
+    ['portable computers', /^8471/, ['laptop', 'laptops', 'computers', 'computer']],
+    ['network equipment', /^8517/, ['network', 'wireless', 'routers', 'router']],
+    ['electronics', /^(84|85)/, ['electronics', 'electronic']],
+    ['skin-care preparations', /^3304/, ['cosmetics', 'skincare', 'skin-care']],
+    ['brake assemblies', /^8708/, ['automotive', 'brake', 'brakes']],
+    ['steel fasteners', /^7318/, ['fasteners', 'bolts', 'screws']],
+    ['DC motors', /^8501/, ['motors', 'motor']],
+    ['storage shelving', /^9403/, ['furniture', 'shelving', 'shelves']],
+    ['plugs & sockets', /^8536/, ['plugs', 'sockets']],
+  ];
+  STOP = 'the we our own in on of for paid pay show me tell what which who how much many is are was were to a an and with per by over from since this that these total all please give list across during between at it as do does did have has had i you us they last first each any more get went spend spent should would'.split(' ');
+  METW = 'duty duties vat tax taxes value values worth cost costs spend declarations declaration count number volume amount import imports imported export exports exported transit shipments shipment goods trend monthly month months country countries commodity commodities products product top type types compare vs versus year ytd quarter q1 q2 q3 released release awaiting waiting delayed stuck gaps gap missing unverified verified populated refreshed refresh stale updated attention issues issue anomalies anomaly risk review problems'.split(' ');
+  vocab() {
+    if (this._voc) return this._voc;
+    const v = new Set([...this.STOP, ...this.METW, 'march', 'mar', 'april', 'apr', 'may', 'june', 'jun', 'july', 'jul', 'august', 'aug', 'time', 'date', 'data', 'customs', 'insights']);
+    this.CTY.forEach(a => a.slice(1).forEach(w => w.split(' ').forEach(x => v.add(x))));
+    this.ORG.forEach(a => a.slice(1).forEach(w => w.split(' ').forEach(x => v.add(x))));
+    this.GDS.forEach(g => g[2].forEach(w => v.add(w)));
+    this._voc = v; return v;
+  }
+  // ---- parsing ----
+  mCountry(s) { for (const a of this.CTY) for (const w of a.slice(1)) if (s.includes(' ' + w)) return a[0]; return null; }
+  mOrigin(s) { const m = s.match(/from ([a-zü\- ]+)/); if (!m) return null; const seg = ' ' + m[1]; for (const a of this.ORG) for (const w of a.slice(1)) if (seg.includes(' ' + w)) return a[0]; return null; }
+  mType(s) { if (/import/.test(s)) return 'import'; if (/export/.test(s)) return 'export'; if (/transit/.test(s)) return 'transit'; return null; }
+  mPeriod(s) {
+    const sm = s.match(/since (march|mar|april|apr|may|june|jun|july|jul|august|aug)/);
+    const MC = { march: 'm03', mar: 'm03', april: 'm04', apr: 'm04', may: 'm05', june: 'm06', jun: 'm06', july: 'm07', jul: 'm07', august: 'm08', aug: 'm08' };
+    if (sm) { const c = MC[sm[1]]; return c === 'm03' ? 'all' : 'f' + c.slice(1); }
+    if (/last 3 months|past 3 months|three months/.test(s)) return 'f06';
+    if (/last month/.test(s)) return 'm07';
+    if (/this month/.test(s)) return 'm08';
+    if (/q2|second quarter/.test(s)) return 'q2';
+    if (/q3|third quarter/.test(s)) return 'f07';
+    if (/ytd|year to date|this year|since march/.test(s)) return 'all';
+    for (const [w, c] of Object.entries(MC)) if (s.includes(' ' + w)) return c;
+    return null;
+  }
+  mGoods(s) { for (const g of this.GDS) for (const w of g[2]) if (s.includes(w)) return { label: g[0], re: g[1].source }; return null; }
+  mMetric(s) { if (/duty and vat|duty & vat|duty \+ vat|duties and vat|taxes/.test(s)) return 'dutyvat'; if (/dut(y|ies)/.test(s)) return 'duty'; if (/\bvat\b|\btax\b/.test(s)) return 'vat'; if (/value|worth|spend|cost/.test(s)) return 'value'; if (/how many|count|number of|volume/.test(s)) return 'count'; return null; }
+  mGroup(s) { if (/by country|per country|across countr|which country/.test(s)) return 'country'; if (/by month|per month|monthly|over time|trend/.test(s)) return 'month'; if (/commodit|top products|by product|which goods|by goods/.test(s)) return 'commodity'; if (/by type/.test(s)) return 'type'; return null; }
+  parse(q) {
+    const t = ' ' + q.toLowerCase().replace(/[?.,!;:]/g, ' ').replace(/\s+/g, ' ') + ' ';
+    const card = { id: this.state.seq, q, inReport: false, pending: true };
+    const lists = [['awaiting', /awaiting|not yet released|unreleased|stuck|delayed|waiting/], ['gaps', /\bgap|missing|not populated|unverified|not verified|incomplete/], ['stale', /refresh|stale|outdated|not updated/], ['attention', /attention|issue|anomal|risk|review|problem/]];
+    for (const [k, re] of lists) if (re.test(t)) { card.kind = 'list'; card.list = k; card.conf = this.confOf(t, 2); return card; }
+    if (/\bvs\b|\bversus\b|^ compare\b| compare /.test(t)) {
+      const cmp = this.parseCmp(t);
+      if (cmp) { card.kind = 'cmp'; card.cmp = cmp; card.conf = this.confOf(t, 2); return card; }
+    }
+    const metric = this.mMetric(t), group = this.mGroup(t), country = this.mCountry(t), type = this.mType(t), period = this.mPeriod(t), goods = this.mGoods(t), origin = this.mOrigin(t);
+    card.kind = 'agg';
+    card.interp = { metric: metric || 'value', period: period || 'all', country: country || 'all', type: type || 'all', group: group || 'none', goods, origin };
+    const signals = [metric, group, country, type, period, goods, origin].filter(Boolean).length;
+    card.conf = this.confOf(t, signals);
+    return card;
+  }
+  parseCmp(t) {
+    const metric = this.mMetric(t) || 'value';
+    let sides = t.split(/\bvs\b|\bversus\b/);
+    if (sides.length !== 2) return null;
+    const side = s => {
+      s = ' ' + s + ' ';
+      const ty = this.mType(s); if (ty) return { f: 'type', v: ty };
+      const c = this.mCountry(s); if (c) return { f: 'country', v: c };
+      const p = this.mPeriod(s); if (p) return { f: 'period', v: p };
+      return null;
+    };
+    const a = side(sides[0]), b = side(sides[1]);
+    if (!a || !b || a.f !== b.f) return null;
+    const base = { metric, period: this.mPeriod(t) || 'all', country: 'all', type: 'all', group: 'none', goods: this.mGoods(t), origin: this.mOrigin(t) };
+    if (a.f === 'period') base.period = 'all';
+    return { field: a.f, a: a.v, b: b.v, base };
+  }
+  confOf(t, signals) {
+    const voc = this.vocab();
+    const left = t.trim().split(' ').filter(w => w.length > 2 && !/^\d/.test(w) && !voc.has(w));
+    if (left.length) return { low: true, msg: 'Some words were not used in the answer: “' + [...new Set(left)].join(', ') + '”. Review the interpretation chips — adjust them if this is not what you meant.' };
+    if (signals === 0) return { low: true, msg: 'This question was too open to interpret confidently — showing total customs value across all data. Adjust the chips to refine.' };
+    return { low: false, msg: '' };
+  }
+  // ---- compute (deterministic) ----
+  fmtE(n) { return 'EUR ' + Math.round(n).toLocaleString('en-GB'); }
+  metricVal(l, d, m) { const fx = d.fx; if (m === 'duty') return l.dutyAmt * fx; if (m === 'vat') return l.vatAmt * fx; if (m === 'dutyvat') return (l.dutyAmt + l.vatAmt) * fx; return l.customs * fx; }
+  metricLbl(m) { return { value: 'Customs value', duty: 'Duty', vat: 'VAT', dutyvat: 'Duty + VAT', count: 'Declarations' }[m]; }
+  computeAgg(it) {
+    const P = this.PD[it.period], m = it.metric;
+    const gre = it.goods ? new RegExp(it.goods.re) : null;
+    let total = 0; const ids = []; const g = new Map();
+    const MN = { '03': 'Mar', '04': 'Apr', '05': 'May', '06': 'Jun', '07': 'Jul', '08': 'Aug' };
+    for (const d of this.D.DECLS) {
+      if (d.date < P.from || d.date > P.to) continue;
+      if (it.country !== 'all' && d.cc !== it.country) continue;
+      if (it.type !== 'all' && d.type !== it.type) continue;
+      const lines = d.lines.filter(l => (!gre || gre.test(l.code.replace(/\s/g, ''))) && (!it.origin || l.origin === it.origin));
+      if (!lines.length) continue;
+      ids.push(d.id);
+      const dv = m === 'count' ? 1 : lines.reduce((s, l) => s + this.metricVal(l, d, m), 0);
+      total += dv;
+      const grp = it.group === 'none' ? (it.country === 'all' ? 'country' : 'month') : it.group;
+      if (grp === 'commodity') lines.forEach(l => g.set(l.desc, (g.get(l.desc) || 0) + (m === 'count' ? 1 : this.metricVal(l, d, m))));
+      else { const k = grp === 'country' ? d.countryName : grp === 'month' ? d.date.slice(5, 7) : d.type; g.set(k, (g.get(k) || 0) + dv); }
+    }
+    const grp = it.group === 'none' ? (it.country === 'all' ? 'country' : 'month') : it.group;
+    let rows = [...g.entries()];
+    if (grp === 'month') rows.sort((a, b) => a[0].localeCompare(b[0])); else rows.sort((a, b) => b[1] - a[1]);
+    rows = rows.slice(0, 10);
+    const max = Math.max(1, ...rows.map(r => r[1]));
+    const cap = s => ({ import: 'Import', export: 'Export', transit: 'Transit' }[s] || s);
+    const vf = v => m === 'count' ? Math.round(v).toLocaleString('en-GB') : this.fmtE(v);
+    const vrows = rows.map(([k, v]) => ({
+      label: grp === 'month' ? MN[k] + ' 2026' : grp === 'type' ? cap(k) : k,
+      val: vf(v), w: Math.round(v / max * 100) + '%',
+      pct: total > 0 ? '· ' + Math.round(v / total * 100) + '%' : '',
+    }));
+    return {
+      total, n: ids.length, ids, rows: vrows, grp,
+      head: m === 'count' ? ids.length.toLocaleString('en-GB') + ' declarations' : this.fmtE(total),
+      sub: (m === 'count' ? '' : 'Across ' + ids.length + ' declarations · ') + this.metricLbl(m) + ' · ' + P.label + (m === 'count' ? '' : ' · EUR equivalent'),
+      rowsTitle: 'Breakdown by ' + (grp === 'month' ? 'month' : grp) + ' (computed)',
+    };
+  }
+  computeList(k) {
+    const D = this.D, days = d => Math.round((new Date('2026-08-26') - new Date(d)) / 86400000);
+    let decls = [], reason = () => '';
+    if (k === 'awaiting') { decls = D.DECLS.filter(d => d.status === 'Awaiting release'); reason = d => 'Submitted ' + days(d.date) + ' days ago — not yet released'; }
+    else if (k === 'gaps') { decls = D.DECLS.filter(d => d.assure.missing.length > 0 || d.assure.verification !== 'Verified'); reason = d => d.assure.missing.length ? d.assure.missing[0].field : 'Values not yet compared with source record'; }
+    else if (k === 'stale') { decls = D.DECLS.filter(d => !d.assure.updated.startsWith('2026-08-26')); reason = d => 'Last updated ' + d.assure.updated.slice(0, 10) + ' — updates expected daily'; }
+    else { decls = D.ATTN; reason = d => d.attention.issue + ' — ' + d.attention.detail; }
+    const titles = { awaiting: 'declarations awaiting release', gaps: 'declarations with data gaps', stale: 'declarations not refreshed in the latest update', attention: 'declarations flagged for attention' };
+    return {
+      n: decls.length, ids: decls.map(d => d.id), title: titles[k],
+      head: decls.length + ' ' + titles[k],
+      lrows: decls.map(d => ({ id: d.id, mrn: d.mrn, date: this.fd(d.date), country: d.countryName, reason: reason(d), val: this.fmtE(d.customsValue * d.fx) })),
+    };
+  }
+  computeCmp(cmp) {
+    const mk = v => { const it = { ...cmp.base, goods: cmp.base.goods, origin: cmp.base.origin }; it[cmp.field] = v; return it; };
+    const A = this.computeAgg(mk(cmp.a)), B = this.computeAgg(mk(cmp.b));
+    const cn = c => (this.D.CNAMES[c] || c);
+    const lbl = v => cmp.field === 'period' ? this.PD[v].label : cmp.field === 'country' ? cn(v) : { import: 'Imports', export: 'Exports', transit: 'Transit' }[v];
+    const max = Math.max(1, A.total, B.total);
+    let deltaTxt = '', deltaCss = 'color:#5F6368;';
+    if (A.total > 0) {
+      const p = (B.total - A.total) / A.total * 100;
+      deltaTxt = lbl(cmp.b) + ' is ' + (p >= 0 ? '+' : '') + p.toFixed(1) + '% vs ' + lbl(cmp.a) + ' (' + this.metricLbl(cmp.base.metric) + ', EUR equivalent)';
+      deltaCss = p >= 0 ? 'color:#1E7A46;' : 'color:#B3261E;';
+    } else deltaTxt = 'No ' + this.metricLbl(cmp.base.metric).toLowerCase() + ' in ' + lbl(cmp.a) + ' — comparison shown as absolute values.';
+    const vf = v => cmp.base.metric === 'count' ? Math.round(v).toLocaleString('en-GB') + ' declarations' : this.fmtE(v);
+    return {
+      aLbl: lbl(cmp.a), bLbl: lbl(cmp.b), aVal: vf(A.total), bVal: vf(B.total),
+      aW: Math.round(A.total / max * 100) + '%', bW: Math.round(B.total / max * 100) + '%',
+      aSub: A.n + ' declarations', bSub: B.n + ' declarations',
+      deltaTxt, deltaCss, n: A.n + B.n, ids: [...A.ids, ...B.ids],
+      interpText: 'Comparing ' + this.metricLbl(cmp.base.metric).toLowerCase() + ': ' + lbl(cmp.a) + ' vs ' + lbl(cmp.b),
+    };
+  }
+  fd(s) { if (!s) return '—'; const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; const p = s.split('-'); return +p[2] + ' ' + M[+p[1] - 1] + ' ' + p[0]; }
+  dot(st) { return { Released: '#1E7A46', Completed: '#1E7A46', Amended: '#2E5FA3', 'In transit': '#2E5FA3', 'Awaiting release': '#B45309', 'Under customs control': '#B45309' }[st] || '#6B6E72'; }
+  mo(n, cur) { return cur + ' ' + Math.round(n).toLocaleString('en-GB'); }
+  // ---- actions ----
+  pushQ(q, instant) {
+    const card = this.parse(q);
+    if (instant) card.pending = false;
+    this.setState(s => ({ feed: [card, ...s.feed], seq: s.seq + 1, q: '' }));
+    if (!instant) setTimeout(() => this.setState(s => ({ feed: s.feed.map(c => c.id === card.id ? { ...c, pending: false } : c) })), 700);
+  }
+  askGo = () => { const q = this.state.q.trim(); if (q) this.pushQ(q); };
+  qKey = e => { if (e.key === 'Enter') this.askGo(); };
+  setQV = e => this.setState({ q: e.target.value });
+  suggGo = e => this.pushQ(e.currentTarget.dataset.q);
+  brX = e => { const k = e.currentTarget.dataset.k; this.setState(s => ({ dis: { ...s.dis, [k]: true } })); };
+  upCard(id, fn) { this.setState(s => ({ feed: s.feed.map(c => c.id === id ? fn({ ...c }) : c) })); }
+  chipSet = e => { const { name, value } = e.target; const id = +e.currentTarget.dataset.id; this.upCard(id, c => { c.interp = { ...c.interp, [name]: value }; return c; }); };
+  gX = e => { const id = +e.currentTarget.dataset.id; this.upCard(id, c => { c.interp = { ...c.interp, goods: null }; return c; }); };
+  oX = e => { const id = +e.currentTarget.dataset.id; this.upCard(id, c => { c.interp = { ...c.interp, origin: null }; return c; }); };
+  repT = e => { const id = +e.currentTarget.dataset.id; this.upCard(id, c => { c.inReport = !c.inReport; return c; }); };
+  cardX = e => { const id = +e.currentTarget.dataset.id; this.setState(s => ({ feed: s.feed.filter(c => c.id !== id) })); };
+  openEvid = e => {
+    const id = +e.currentTarget.dataset.id;
+    const c = this.state.feed.find(x => x.id === id); if (!c) return;
+    const r = c.kind === 'agg' ? this.computeAgg(c.interp) : c.kind === 'cmp' ? this.computeCmp(c.cmp) : this.computeList(c.list);
+    this.setState({ evid: { title: c.q, ids: [...new Set(r.ids)] } });
+  };
+  evidClose = () => this.setState({ evid: null });
+  evidToReg = () => this.setState(s => ({ tab: 'decls', regIds: s.evid.ids, regLbl: s.evid.title, evid: null }));
+  goAsk = () => this.setState({ tab: 'ask' });
+  goDecls = () => this.setState({ tab: 'decls' });
+  regSet = e => { const { name, value } = e.target; this.setState(s => ({ regF: { ...s.regF, [name]: value } })); };
+  regQ = e => { const v = e.target.value; this.setState(s => ({ regF: { ...s.regF, q: v } })); };
+  regClear = () => this.setState({ regIds: null, regLbl: '' });
+  openRow = e => this.setState({ drawerId: +e.currentTarget.dataset.id });
+  drawerClose = () => this.setState({ drawerId: null });
+  reportOpen = () => this.setState({ repOpen: true });
+  reportClose = () => this.setState({ repOpen: false });
+  toastMsg(m) { clearTimeout(this._tt); this.setState({ toast: m }); this._tt = setTimeout(() => this.setState({ toast: null }), 2800); }
+  reportSections() {
+    return this.state.feed.filter(c => c.inReport).reverse().map(c => {
+      if (c.kind === 'agg') {
+        const r = this.computeAgg(c.interp);
+        const scope = [c.interp.country !== 'all' ? (this.D.CNAMES[c.interp.country]) : 'all countries', c.interp.type !== 'all' ? c.interp.type + 's' : null, c.interp.goods ? c.interp.goods.label : null, c.interp.origin ? 'origin ' + this.D.CNAMES[c.interp.origin] : null].filter(Boolean).join(', ');
+        return { title: c.q, rowsShow: r.rows.length > 0, rows: r.rows.map(x => ({ label: x.label, val: x.val })), text: this.metricLbl(c.interp.metric) + ' for ' + scope + ', ' + this.PD[c.interp.period].label + ': ' + r.head + ', computed from ' + r.n + ' declarations. EUR equivalents use the conversion rate declared on each declaration.' };
+      }
+      if (c.kind === 'cmp') {
+        const r = this.computeCmp(c.cmp);
+        return { title: c.q, rowsShow: true, rows: [{ label: r.aLbl, val: r.aVal }, { label: r.bLbl, val: r.bVal }], text: r.interpText + '. ' + r.aLbl + ': ' + r.aVal + ' (' + r.aSub + '); ' + r.bLbl + ': ' + r.bVal + ' (' + r.bSub + '). ' + r.deltaTxt + '.' };
+      }
+      const r = this.computeList(c.list);
+      return { title: c.q, rowsShow: true, rows: r.lrows.slice(0, 6).map(x => ({ label: x.mrn + ' · ' + x.country, val: x.reason })), text: r.head + ' as of 26 Aug 2026. Each declaration is listed with the reason it was flagged.' };
+    });
+  }
+  reportDl = () => {
+    const secs = this.reportSections();
+    const esc = t => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    const html = '<html><head><meta charset="utf-8"><title>Customs Insights report draft</title></head><body style="font-family:sans-serif;max-width:720px;margin:40px auto;"><h1>Customs Insights — report draft</h1><p>Compiled 26 Aug 2026. All figures computed from declaration source data.</p>' +
+      secs.map(s => '<h2>' + esc(s.title) + '</h2><p>' + esc(s.text) + '</p><table border="1" cellpadding="6" cellspacing="0">' + s.rows.map(r => '<tr><td>' + esc(r.label) + '</td><td align="right">' + esc(r.val) + '</td></tr>').join('') + '</table>').join('') + '</body></html>';
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([html], { type: 'text/html' })); a.download = 'customs-report-draft.html'; a.click();
+    this.toastMsg('Report draft downloaded');
+  };
+  // ---- view models ----
+  buildCard(c) {
+    const base = {
+      id: c.id, q: c.q, pending: !!c.pending, done: !c.pending,
+      repLbl: c.inReport ? '✓ In report' : '+ Add to report',
+      repCss: c.inReport ? 'background:#E9F5EC;border-color:#CBE7D3;color:#1E7A46;font-weight:600;' : '',
+      low: c.conf.low, confMsg: c.conf.msg,
+      edit: false, textMode: false, interpText: '', goodsShow: false, goodsLbl: '', originShow: false, originLbl: '',
+      empty: false, agg: false, cmpShow: false, listShow: false,
+      head: '', sub: '', rowsShow: false, rowsTitle: '', rows: [],
+      aLbl: '', aVal: '', aW: '0%', aSub: '', bLbl: '', bVal: '', bW: '0%', bSub: '', deltaTxt: '', deltaCss: '',
+      lrows: [], n: 0, note: 'EUR equivalents use the rate declared on each declaration',
+    };
+    if (c.pending) return base;
+    if (c.kind === 'agg') {
+      const r = this.computeAgg(c.interp);
+      return {
+        ...base, edit: true,
+        iMetric: c.interp.metric, iPeriod: c.interp.period, iCountry: c.interp.country, iType: c.interp.type, iGroup: c.interp.group,
+        goodsShow: !!c.interp.goods, goodsLbl: c.interp.goods ? c.interp.goods.label : '',
+        originShow: !!c.interp.origin, originLbl: c.interp.origin ? (this.D.CNAMES[c.interp.origin] || c.interp.origin) : '',
+        empty: r.n === 0, agg: r.n > 0, head: r.head, sub: r.sub,
+        rowsShow: r.n > 0 && r.rows.length > 1, rowsTitle: r.rowsTitle, rows: r.rows, n: r.n,
+        note: c.interp.metric === 'count' ? 'Counts are exact — no conversion applied' : base.note,
+      };
+    }
+    if (c.kind === 'cmp') {
+      const r = this.computeCmp(c.cmp);
+      return { ...base, textMode: true, interpText: r.interpText, cmpShow: true, ...{ aLbl: r.aLbl, aVal: r.aVal, aW: r.aW, aSub: r.aSub, bLbl: r.bLbl, bVal: r.bVal, bW: r.bW, bSub: r.bSub, deltaTxt: r.deltaTxt, deltaCss: r.deltaCss }, n: r.n };
+    }
+    const r = this.computeList(c.list);
+    return { ...base, textMode: true, interpText: 'Listing ' + r.title + ' — a rule-based check, not a judgement', listShow: true, head: r.head, lrows: r.lrows, n: r.n, note: 'Flags come from deterministic data checks' };
+  }
+  briefing() {
+    const D = this.D, out = [];
+    const days = d => Math.round((new Date('2026-08-26') - new Date(d)) / 86400000);
+    const aw = D.DECLS.filter(d => d.status === 'Awaiting release');
+    if (aw.length) { const o = aw.reduce((a, b) => a.date < b.date ? a : b); out.push({ k: 'aw', dot: '#B45309', title: aw.length + ' declaration' + (aw.length > 1 ? 's' : '') + ' awaiting release', detail: 'Oldest submitted ' + days(o.date) + ' days ago in ' + o.countryName + ' (' + o.mrn + '). Release is typically same or next day.', q: 'Declarations awaiting release' }); }
+    const gp = D.DECLS.filter(d => d.assure.missing.length > 0 || d.assure.verification !== 'Verified');
+    if (gp.length) out.push({ k: 'gp', dot: '#B45309', title: gp.length + ' declarations have data gaps', detail: gp.filter(d => d.assure.missing.length).length + ' with a required field not populated or pending verification. Weight-based analyses exclude the affected lines.', q: 'Declarations with data gaps' });
+    const dr = this.computeAgg({ metric: 'duty', period: 'all', country: 'all', type: 'all', group: 'commodity', goods: null, origin: null });
+    if (dr.rows.length && dr.total > 0) { const top = dr.rows[0]; out.push({ k: 'dc', dot: '#2E5FA3', title: 'Duty is concentrated in one commodity', detail: '“' + top.label + '” accounts for ' + top.pct.replace('· ', '') + ' of all duty paid since March (' + top.val + ' of ' + this.fmtE(dr.total) + ').', q: 'Duty by commodity' }); }
+    const st = D.DECLS.filter(d => !d.assure.updated.startsWith('2026-08-26'));
+    if (st.length) out.push({ k: 'st', dot: '#B45309', title: st.length + ' declaration missed the latest refresh', detail: 'Last updated ' + st[0].assure.updated.slice(0, 10) + ' — updates are expected daily. Values shown are from the last successful update.', q: 'Declarations not refreshed' });
+    return out.filter(b => !this.state.dis[b.k]);
+  }
+  renderVals() {
+    const S = this.state;
+    const H = {
+      retry: this.retry, goAsk: this.goAsk, goDecls: this.goDecls, setQV: this.setQV, qKey: this.qKey, askGo: this.askGo,
+      suggGo: this.suggGo, brX: this.brX, chipSet: this.chipSet, gX: this.gX, oX: this.oX, repT: this.repT, cardX: this.cardX,
+      openEvid: this.openEvid, evidClose: this.evidClose, evidToReg: this.evidToReg, openRow: this.openRow, drawerClose: this.drawerClose,
+      regSet: this.regSet, regQ: this.regQ, regClear: this.regClear, reportOpen: this.reportOpen, reportClose: this.reportClose, reportDl: this.reportDl,
+      q: S.q, regF: S.regF, toast: S.toast,
+    };
+    if (S.err) return { ...H, err: true, loading: false, ready: false };
+    if (!S.ready) return { ...H, err: false, loading: true, ready: false };
+    const D = this.D;
+    const tabA = 'color:#174A73;font-weight:700;border-bottom:2.5px solid #1E5A8A;';
+    const tabI = 'color:#5F6368;border-bottom:2.5px solid transparent;';
+    const cards = S.feed.map(c => this.buildCard(c));
+    const briefs = (this.props.briefing ?? true) ? this.briefing() : [];
+    const repN = S.feed.filter(c => c.inReport).length;
+    // register
+    let base = S.regIds ? D.DECLS.filter(d => S.regIds.includes(d.id)) : D.DECLS.filter(d =>
+      (S.regF.country === 'all' || d.cc === S.regF.country) && (S.regF.type === 'all' || d.type === S.regF.type));
+    const ql = S.regF.q.trim().toLowerCase();
+    if (ql) base = base.filter(d => d.mrn.toLowerCase().includes(ql) || d.ref.toLowerCase().includes(ql));
+    base = [...base].sort((a, b) => b.date.localeCompare(a.date));
+    const cap = t => ({ import: 'Import', export: 'Export', transit: 'Transit' }[t]);
+    const regRows = base.map(d => ({
+      id: d.id, status: d.status, dot: this.dot(d.status), mrn: d.mrn, date: this.fd(d.release || d.date),
+      country: d.countryName, type: cap(d.type), importer: d.importer.name,
+      val: this.mo(d.customsValue, d.cur), duty: this.mo(d.duty, d.cur), vat: this.mo(d.vat, d.cur),
+    }));
+    // evidence
+    let evRows = [], evTitle = '', evCount = 0;
+    if (S.evid) {
+      evTitle = S.evid.title; evCount = S.evid.ids.length;
+      evRows = S.evid.ids.map(id => D.DECLS.find(d => d.id === id)).filter(Boolean).sort((a, b) => b.date.localeCompare(a.date)).map(d => ({
+        id: d.id, mrn: d.mrn, dot: this.dot(d.status),
+        meta: this.fd(d.date) + ' · ' + d.countryName + ' · ' + cap(d.type) + ' · ' + d.status,
+        val: this.fmtE(d.customsValue * d.fx),
+      }));
+    }
+    // drawer
+    let dw = {}, dwLines = [];
+    if (S.drawerId) {
+      const d = D.DECLS.find(x => x.id === S.drawerId);
+      if (d) {
+        dw = { mrn: d.mrn, status: d.status, dot: this.dot(d.status), type: cap(d.type), country: d.countryName, date: this.fd(d.release || d.date), ref: d.ref, importer: d.importer.name, exporter: d.exporter.name, val: this.mo(d.customsValue, d.cur), duty: this.mo(d.duty, d.cur), vat: this.mo(d.vat, d.cur), cur: d.cur };
+        dwLines = d.lines.map(l => ({ no: l.no, code: l.code, desc: l.desc, customs: Math.round(l.customs).toLocaleString('en-GB'), duty: l.dutyAmt ? Math.round(l.dutyAmt).toLocaleString('en-GB') : '—', vat: l.vatAmt ? Math.round(l.vatAmt).toLocaleString('en-GB') : '—' }));
+      }
+    }
+    return {
+      ...H, err: false, loading: false, ready: true,
+      scrAsk: S.tab === 'ask', scrDe: S.tab === 'decls',
+      tabAsk: S.tab === 'ask' ? tabA : tabI, tabDe: S.tab === 'decls' ? tabA : tabI,
+      sugg: ['How much duty did we pay in Germany since June?', 'Top commodities by customs value', 'Compare imports vs exports', 'Monthly VAT trend for imports', 'Customs value of textiles from Türkiye', 'Declarations with data gaps'],
+      briefs, brShow: briefs.length > 0,
+      cards, feedShow: cards.length > 0, feedEmpty: cards.length === 0,
+      countryOpts: D.COUNTRIES.map(C => ({ v: C.c, label: C.name })),
+      repN, repBtnShow: repN > 0, repOpen: S.repOpen, reps: S.repOpen ? this.reportSections() : [],
+      regRows, regCount: base.length.toLocaleString('en-GB'), regChip: !!S.regIds, regChipLbl: S.regLbl,
+      evid: !!S.evid, evTitle, evCount, evRows,
+      drawer: !!S.drawerId, dw, dwLines,
+    };
+  }
+}
+</script>
+</body>
+</html>

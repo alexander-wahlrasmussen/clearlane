@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: Customs Insights Declarations API
+  version: 0.1.0
+  description: |
+    Contract between the clearlane frontend and the declarations backend.
+    The backend serves data from the customs SQL store; all endpoints require a
+    bearer token issued by Microsoft Entra External ID (CIAM) for scope
+    `api://customs-insights/Declarations.Read`.
+
+    Conventions:
+    - All money fields are integers in MINOR units of the declared currency.
+    - The four field states are encoded with sentinels on nullable-by-business
+      fields: `§na` (not applicable), `§np` (not populated), `§nav` (not
+      available), `§unv` (not verified). Clients convert them to a typed
+      FieldValue; they must never render as blanks or zeros.
+    - EUR-equivalent aggregates use only the conversion rate declared on each
+      declaration — never a live FX feed.
+servers:
+  - url: https://api.example.invalid/customs-insights/v1
+security:
+  - entraExternalId: []
+paths:
+  /meta/scope:
+    get:
+      summary: Data scope — period, countries, entities, freshness, limitations
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DataScope' }
+  /declarations:
+    get:
+      summary: Paged declaration register
+      parameters:
+        - { name: entity, in: query, schema: { type: string } }
+        - { name: country, in: query, schema: { type: string }, description: ISO country code }
+        - { name: type, in: query, schema: { type: string, enum: [import, export, transit] } }
+        - { name: status, in: query, schema: { type: string } }
+        - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: search, in: query, schema: { type: string }, description: MRN or customer reference substring }
+        - { name: withGapsOnly, in: query, schema: { type: boolean } }
+        - { name: sort, in: query, schema: { type: string, enum: [date, customsValue, duty, vat] } }
+        - { name: order, in: query, schema: { type: string, enum: [asc, desc] } }
+        - { name: page, in: query, schema: { type: integer, minimum: 1 } }
+        - { name: pageSize, in: query, schema: { type: integer, maximum: 500 } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeclarationPage' }
+  /declarations/summary:
+    get:
+      summary: Aggregates over the full filtered set (register summary cards)
+      description: Accepts the same filter parameters as /declarations.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RegisterSummary' }
+  /declarations/{mrn}:
+    get:
+      summary: One declaration with all goods lines
+      parameters:
+        - { name: mrn, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Declaration' }
+        '404': { description: Unknown MRN }
+  /ask/interpret:
+    post:
+      summary: Interpret a natural-language question (LLM runs server-side)
+      description: |
+        The model maps the question onto a strict interpretation schema and
+        never produces numbers. See docs/ai-orchestration.md for the prompt and
+        tool definition. Low-confidence interpretations carry a plain-English
+        message; the client shows it and lets the user adjust the chips.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question]
+              properties:
+                question: { type: string, maxLength: 500 }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InterpretedQuestion' }
+  /ask/compute:
+    post:
+      summary: Deterministically compute an answer from a structured interpretation
+      description: |
+        No model involved — used when the user edits interpretation chips.
+        Returns the computed answer plus the complete evidence MRN list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Interpretation' }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Answer' }
+components:
+  securitySchemes:
+    entraExternalId:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://{tenant}.ciamlogin.com/{tenant}.onmicrosoft.com/oauth2/v2.0/authorize
+          tokenUrl: https://{tenant}.ciamlogin.com/{tenant}.onmicrosoft.com/oauth2/v2.0/token
+          scopes:
+            api://customs-insights/Declarations.Read: Read the customer's declarations
+  schemas:
+    WireNumber:
+      description: Number, or a field-state sentinel
+      oneOf:
+        - { type: number }
+        - { type: string, enum: ['§na', '§np', '§nav', '§unv'] }
+    WireString:
+      description: String, or a field-state sentinel
+      type: string
+    DataScope:
+      type: object
+      required: [availableFrom, availableTo, refreshedAt, countries, entities, customerName, limitations]
+      properties:
+        availableFrom: { type: string, format: date }
+        availableTo: { type: string, format: date }
+        refreshedAt: { type: string, example: '2026-08-26 06:15 UTC' }
+        countries:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string }
+              name: { type: string }
+        entities: { type: array, items: { type: string } }
+        customerName: { type: string }
+        limitations: { type: array, items: { type: string } }
+    RegisterSummary:
+      type: object
+      properties:
+        total: { type: integer }
+        imports: { type: integer }
+        exports: { type: integer }
+        transits: { type: integer }
+        customsValueEurMinor: { type: integer }
+        dutyVatEurMinor: { type: integer }
+        awaitingRelease: { type: integer }
+        withDataGaps: { type: integer }
+        currencies: { type: array, items: { type: string } }
+    DeclarationPage:
+      type: object
+      properties:
+        items: { type: array, items: { $ref: '#/components/schemas/Declaration' } }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+    Party:
+      type: object
+      properties:
+        name: { type: string }
+        eori: { type: string, nullable: true, description: null = non-EU party }
+    GoodsLine:
+      type: object
+      description: Field-by-field shape matches src/api/dto.ts (GoodsLineDto)
+      properties:
+        no: { type: integer }
+        code: { type: string }
+        desc: { type: string }
+        origin: { type: string }
+        proc: { type: string }
+        pref: { $ref: '#/components/schemas/WireString' }
+        grossKg: { $ref: '#/components/schemas/WireNumber' }
+        netKg: { $ref: '#/components/schemas/WireNumber' }
+        sku: { $ref: '#/components/schemas/WireString' }
+        qty: { type: integer }
+        itemMinor: { type: integer }
+        customsMinor: { type: integer }
+        transportMinor: { type: integer }
+        insuranceMinor: { type: integer }
+        dutyRatePct: { type: number, nullable: true }
+        dutyMinor: { type: integer }
+        vatRatePct: { type: number, nullable: true }
+        vatMinor: { type: integer }
+        packaging: { $ref: '#/components/schemas/WireString' }
+        pkgQty: { $ref: '#/components/schemas/WireNumber' }
+        suppUnits: { $ref: '#/components/schemas/WireString' }
+        quota: { $ref: '#/components/schemas/WireString' }
+        exciseMinor: { $ref: '#/components/schemas/WireNumber' }
+        addRef: { $ref: '#/components/schemas/WireString' }
+    Declaration:
+      type: object
+      description: Field-by-field shape matches src/api/dto.ts (DeclarationDto)
+      properties:
+        mrn: { type: string }
+        declNo: { type: string }
+        ref: { type: string }
+        ucr: { type: string }
+        cc: { type: string }
+        entity: { type: string }
+        type: { type: string, enum: [import, export, transit] }
+        status: { type: string }
+        cur: { type: string }
+        fx: { type: number, description: Conversion rate declared on the declaration }
+        date: { type: string, format: date }
+        release: { type: string, format: date, nullable: true }
+        origin: { type: string }
+        dest: { type: string }
+        mode: { type: string }
+        incoterms: { type: string }
+        container: { $ref: '#/components/schemas/WireString' }
+        office: { type: string }
+        importer: { $ref: '#/components/schemas/Party' }
+        exporter: { $ref: '#/components/schemas/Party' }
+        broker: { type: string }
+        brokerEori: { type: string }
+        invoiceMinor: { type: integer }
+        transportMinor: { type: integer }
+        insuranceMinor: { type: integer }
+        customsValueMinor: { type: integer }
+        dutyMinor: { type: integer }
+        vatMinor: { type: integer }
+        commSummary: { type: string }
+        lines: { type: array, items: { $ref: '#/components/schemas/GoodsLine' } }
+        assure:
+          type: object
+          properties:
+            included: { type: boolean }
+            received: { type: string }
+            processed: { type: string }
+            updated: { type: string }
+            completion: { type: number }
+            verification: { type: string, enum: [Verified, Unverified] }
+            missing:
+              type: array
+              items:
+                type: object
+                properties:
+                  field: { type: string }
+                  impact: { type: string }
+        attention:
+          type: object
+          nullable: true
+          properties:
+            issue: { type: string }
+            detail: { type: string }
+            tab: { type: string, enum: [overview, goods, references, assurance] }
+            detected: { type: string, format: date }
+            line: { type: integer }
+    Interpretation:
+      type: object
+      description: Mirrors src/ai/ask-types.ts — aggregate | compare | list
+      properties:
+        kind: { type: string, enum: [aggregate, compare, list] }
+    InterpretedQuestion:
+      type: object
+      properties:
+        question: { type: string }
+        interpretation: { $ref: '#/components/schemas/Interpretation' }
+        confidence:
+          type: object
+          properties:
+            low: { type: boolean }
+            message: { type: string }
+    Answer:
+      type: object
+      description: Mirrors src/ai/answer-compute.ts — always carries evidenceMrns
+      properties:
+        kind: { type: string, enum: [aggregate, compare, list] }
+        evidenceMrns: { type: array, items: { type: string } }

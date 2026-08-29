@@ -60,8 +60,9 @@ These came out of design review and are the reason the product is credible. Do n
 - Plain CSS modules or vanilla-extract. **No Tailwind, no component library** — the visual
   language is specific and already defined (see below).
 - **Vitest** + Testing Library. **Playwright** for the two critical flows.
-- API: mock service worker against a typed `DeclarationsClient` interface. Real backend TBD —
-  keep all data access behind that one interface.
+- API: in-memory mock client behind a typed `DeclarationsClient` interface (see
+  `contracts/openapi.yaml` for the real backend contract — SQL-backed, behind
+  Microsoft Entra External ID). Keep all data access behind that one interface.
 
 ## Design tokens (lifted from the approved designs — use exactly)
 
@@ -82,7 +83,7 @@ Warning border #F0DFC0     Negative      #B3261E    Negative bg #FBEAE9
 
 ## Data model
 
-Port the shapes in `reference/customs-data.ts` verbatim — they are the agreed contract:
+Port the shapes in `reference/customs-data.js` verbatim — they are the agreed contract:
 `Declaration` (with `assure: { received, processed, updated, verification, missing[] }`),
 `GoodsLine`, `Country`. The `§na` / `§np` / `§nav` / `§unv` sentinel values encode the four
 field states; convert them to a discriminated union `FieldValue<T>` on the way in, so the four
@@ -124,4 +125,3 @@ Ship 1–5 before starting 6.
 `reference/` holds the approved design prototypes (`Customs Insights MVP.dc.html`,
 `Customs Insights AI Concept.dc.html`, `customs-data.js`). They are the source of truth for
 layout, copy and behaviour. Read the copy literally — the wording was reviewed.
-

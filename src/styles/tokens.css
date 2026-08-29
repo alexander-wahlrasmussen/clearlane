@@ -1,0 +1,31 @@
+/* Design tokens — lifted verbatim from the approved designs. Do not invent new colors. */
+:root {
+  --ink: #1d1f21;
+  --ink-muted: #5f6368;
+  --ink-label: #6b6e72;
+  --ink-faint: #8a8d91;
+  --bg-app: #f5f6f8;
+  --surface: #ffffff;
+  --bg-subtle: #f9fafb;
+  --border: #e1e4e8;
+  --border-2: #d5d9de;
+  --border-row: #f1f3f5;
+  --accent: #1e5a8a;
+  --accent-hover: #17466c;
+  --accent-ink: #174a73;
+  --accent-tint: #e9f0f7;
+  --accent-tint-border: #c9dbea;
+  --positive: #1e7a46;
+  --positive-bg: #e9f5ec;
+  --positive-border: #cbe7d3;
+  --warning-ink: #9a5b00;
+  --warning-bg: #fdf3e1;
+  --warning-border: #f0dfc0;
+  --negative: #b3261e;
+  --negative-bg: #fbeae9;
+
+  --font-ui: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'Spline Sans Mono', monospace;
+  --radius: 6px;
+  --radius-sm: 5px;
+}

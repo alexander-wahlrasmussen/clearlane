@@ -1,0 +1,49 @@
+.chipMuted {
+  background: #f2f3f5;
+  color: var(--ink-label);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 1px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.chipWarning {
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+  border: 1px solid var(--warning-border);
+  border-radius: 9px;
+  padding: 1px 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.statusDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+.statusInline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f2f3f5;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.term {
+  border-bottom: 1px dotted #9a9c9f;
+  cursor: help;
+}

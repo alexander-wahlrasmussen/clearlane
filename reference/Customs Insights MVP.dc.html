@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Spline+Sans+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#F5F6F8;color:#1D1F21;}
+*{box-sizing:border-box;}
+a{color:#1E5A8A;text-decoration:none;}a:hover{color:#17466C;text-decoration:underline;}
+button{font-family:inherit;}
+@keyframes ciSpin{to{transform:rotate(360deg);}}
+@keyframes ciPulse{0%,100%{opacity:.45;}50%{opacity:1;}}
+::selection{background:#CFE0EF;}
+</style>
+</helmet>
+<div style="font-family:'Instrument Sans',system-ui,sans-serif;height:100vh;display:flex;flex-direction:column;background:#F5F6F8;color:#1D1F21;min-width:1024px;font-size:14px;overflow:hidden;">
+
+  <sc-if value="{{err}}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1;display:flex;align-items:center;justify-content:center;" data-screen-label="Error">
+      <div style="background:#fff;border:1px solid #E1E4E8;border-radius:8px;padding:36px 44px;max-width:460px;text-align:center;">
+        <div style="width:36px;height:36px;border-radius:50%;background:#FBEAE9;color:#B3261E;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-weight:700;">!</div>
+        <div style="font-size:17px;font-weight:600;margin-bottom:6px;">We could not load your declaration data</div>
+        <div style="font-size:13px;color:#5F6368;line-height:1.5;margin-bottom:18px;">Your declarations are safe. This is a temporary problem retrieving them — please try again.</div>
+        <button onClick="{{retry}}" style="background:#1E5A8A;color:#fff;border:none;border-radius:5px;height:34px;padding:0 18px;font-size:13px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;">Try again</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{loading}}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;" data-screen-label="Loading">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:18px;height:18px;background:#1E5A8A;transform:rotate(45deg);border-radius:3px;"></div>
+        <div style="font-size:17px;font-weight:600;letter-spacing:-0.01em;">Customs Insights</div>
+      </div>
+      <div style="width:26px;height:26px;border:3px solid #D9E3EE;border-top-color:#1E5A8A;border-radius:50%;animation:ciSpin 0.8s linear infinite;"></div>
+      <div style="font-size:12.5px;color:#5F6368;animation:ciPulse 1.6s ease infinite;">Loading declaration data…</div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ready}}" hint-placeholder-val="{{ false }}">
+    <div style="height:54px;background:#fff;border-bottom:1px solid #E1E4E8;display:flex;align-items:center;gap:14px;padding:0 20px;flex-shrink:0;position:relative;z-index:20;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:15px;height:15px;background:#1E5A8A;transform:rotate(45deg);border-radius:2.5px;"></div>
+        <div style="font-size:15px;font-weight:700;letter-spacing:-0.01em;white-space:nowrap;">Customs Insights</div>
+      </div>
+      <div style="width:1px;height:24px;background:#E1E4E8;"></div>
+      <select value="{{f.entity}}" onChange="{{setF}}" name="entity" aria-label="Customer legal entity" style="height:32px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;color:#1D1F21;max-width:260px;">
+        <option value="all">Nordheim Consumer Group — all entities</option>
+        <sc-for list="{{entityOpts}}" as="o" hint-placeholder-count="3"><option value="{{o}}">{{o}}</option></sc-for>
+      </select>
+      <div style="flex:1;"></div>
+      <div style="font-size:12px;color:#5F6368;white-space:nowrap;">Last refreshed <strong style="color:#1D1F21;">{{refreshed}}</strong></div>
+      <button onClick="{{userToggle}}" aria-label="User menu" style="width:34px;height:34px;border-radius:50%;background:#1E5A8A;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;">AL</button>
+      <sc-if value="{{userOpen}}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;top:50px;right:16px;width:230px;background:#fff;border:1px solid #E1E4E8;border-radius:8px;box-shadow:0 8px 24px rgba(29,31,33,0.10);z-index:40;overflow:hidden;">
+          <div style="padding:12px 14px;border-bottom:1px solid #EDEFF2;">
+            <div style="font-size:13px;font-weight:600;">Astrid Lindqvist</div>
+            <div style="font-size:11.5px;color:#5F6368;margin-top:2px;">Customs &amp; trade compliance</div>
+          </div>
+          <button onClick="{{protoOnly}}" style="display:block;width:100%;text-align:left;padding:9px 14px;border:none;background:#fff;cursor:pointer;font:inherit;font-size:12.5px;" style-hover="background:#F7F9F9;">Profile and preferences</button>
+          <button onClick="{{protoOnly}}" style="display:block;width:100%;text-align:left;padding:9px 14px;border:none;border-top:1px solid #EDEFF2;background:#fff;cursor:pointer;font:inherit;font-size:12.5px;color:#B3261E;" style-hover="background:#FBEAE9;">Sign out</button>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex:1;display:flex;min-height:0;">
+      <nav style="width:208px;background:#F9FAFB;border-right:1px solid #E1E4E8;padding:14px 10px;display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+        <button onClick="{{nav}}" data-s="register" style="display:flex;align-items:center;gap:10px;padding:8px 11px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:13px;color:#3A3D40;cursor:pointer;text-align:left;{{navDeCss}}" style-hover="background:#EEF1F4;" style-focus="outline:2px solid #1E5A8A;outline-offset:-2px;">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 4h12M2 8h12M2 12h8"></path></svg>Declarations</button>
+        <div style="font-size:10.5px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#8A8D91;padding:14px 11px 4px;">Planned</div>
+        <button onClick="{{nav}}" data-s="ph-overview" style="display:flex;align-items:center;gap:10px;padding:8px 11px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:13px;color:#8A8D91;cursor:pointer;text-align:left;{{navOvCss}}" style-hover="background:#EEF1F4;">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="2" width="5" height="5" rx="1"></rect><rect x="9" y="2" width="5" height="5" rx="1"></rect><rect x="2" y="9" width="5" height="5" rx="1"></rect><rect x="9" y="9" width="5" height="5" rx="1"></rect></svg>Overview<span style="margin-left:auto;font-size:9.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #D5D9DE;border-radius:8px;padding:1px 6px;color:#8A8D91;">Planned</span></button>
+        <button onClick="{{nav}}" data-s="ph-exceptions" style="display:flex;align-items:center;gap:10px;padding:8px 11px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:13px;color:#8A8D91;cursor:pointer;text-align:left;{{navExCss}}" style-hover="background:#EEF1F4;">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2.5 14 13H2L8 2.5Z"></path></svg>Exceptions<span style="margin-left:auto;font-size:9.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #D5D9DE;border-radius:8px;padding:1px 6px;color:#8A8D91;">Planned</span></button>
+        <button onClick="{{nav}}" data-s="ph-reports" style="display:flex;align-items:center;gap:10px;padding:8px 11px;border:none;border-radius:6px;background:transparent;font:inherit;font-size:13px;color:#8A8D91;cursor:pointer;text-align:left;{{navReCss}}" style-hover="background:#EEF1F4;">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="2" width="10" height="12" rx="1"></rect><path d="M6 6h4M6 9h4"></path></svg>Reports<span style="margin-left:auto;font-size:9.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;border:1px solid #D5D9DE;border-radius:8px;padding:1px 6px;color:#8A8D91;">Planned</span></button>
+      </nav>
+
+      <main style="flex:1;overflow-y:auto;min-width:0;">
+
+        <sc-if value="{{scrR}}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Declarations" style="padding:22px 26px 40px;">
+          <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <h1 style="font-size:21px;font-weight:700;letter-spacing:-0.01em;margin:0;">Declarations</h1>
+            <div style="font-size:12.5px;color:#5F6368;font-variant-numeric:tabular-nums;">{{regCount}} declarations</div>
+            <div style="flex:1;"></div>
+            <button onClick="{{exportReg}}" style="height:31px;padding:0 14px;border:none;border-radius:5px;background:#1E5A8A;color:#fff;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;" style-focus="outline:2px solid #1E5A8A;outline-offset:2px;">Export results</button>
+          </div>
+
+          <div style="margin-top:14px;background:#F9FAFB;border:1px solid #E3E6EA;border-radius:6px;padding:9px 16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+            <div style="font-size:11px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#6B6E72;">Data scope</div>
+            <div style="font-size:12.5px;color:#3A3D40;">Declarations from <strong>1 March 2026</strong> · <strong>8 countries</strong> · import, export and transit · last refreshed <strong>{{refreshed}}</strong></div>
+            <button onClick="{{scopeToggle}}" style="height:26px;padding:0 11px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#174A73;cursor:pointer;margin-left:auto;" style-hover="background:#F1F4F4;">{{scopeLbl}}</button>
+          </div>
+          <sc-if value="{{scopeOpen}}" hint-placeholder-val="{{ false }}">
+            <div style="background:#fff;border:1px solid #E3E6EA;border-top:none;border-radius:0 0 6px 6px;padding:14px 16px;display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:16px 24px;margin-top:-5px;">
+              <div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Available period</div>
+                <div style="font-size:12.5px;margin-top:4px;line-height:1.5;">1 March 2026 – 26 August 2026. Earlier declarations are not yet available in Customs Insights.</div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;margin-top:12px;">Countries included</div>
+                <div style="font-size:12.5px;margin-top:4px;line-height:1.5;">United Kingdom, Germany, Netherlands, Sweden, Belgium, Denmark, Spain, Norway.</div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Declaration types</div>
+                <div style="font-size:12.5px;margin-top:4px;line-height:1.5;">Import, export and transit declarations filed on your behalf.</div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;margin-top:12px;">Last refreshed</div>
+                <div style="font-size:12.5px;margin-top:4px;line-height:1.5;">26 August 2026, 06:15 UTC. Data is refreshed once per day.</div>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Known limitations</div>
+                <ul style="font-size:12.5px;margin:4px 0 0;padding-left:16px;line-height:1.6;">
+                  <li>Net mass is not populated on a small number of goods lines — these are labelled “Not populated”.</li>
+                  <li>Some records have not yet been compared with the source record — these are labelled “Not verified”.</li>
+                  <li>Values are shown in the declared currency; unlike currencies are never added together.</li>
+                </ul>
+                <div style="font-size:12.5px;margin-top:10px;">Missing a declaration you expected? <a href="#" onClick="{{protoOnly}}">Contact your customs service team</a>.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr 1fr;gap:12px;margin-top:14px;">
+            <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:11px 14px;min-width:0;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;white-space:nowrap;">Declarations in scope</div>
+              <div style="font-size:20px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">{{sumTot}}</div>
+              <div style="font-size:11.5px;color:#5F6368;margin-top:2px;white-space:nowrap;">{{sumSplit}}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:11px 14px;min-width:0;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;white-space:nowrap;">Customs value <span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="EUR equivalent, converted at the exchange rate declared on each declaration. Original currencies are shown in the table." style="display:inline-flex;width:13px;height:13px;border:1px solid #A9ACB0;border-radius:50%;color:#6B6E72;font-size:9px;align-items:center;justify-content:center;cursor:help;text-transform:none;">i</span></div>
+              <div style="font-size:20px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">{{sumVal}}</div>
+              <div style="font-size:11.5px;color:#5F6368;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{sumCurs}}</div>
+            </div>
+            <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:11px 14px;min-width:0;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;white-space:nowrap;">Duty and VAT</div>
+              <div style="font-size:20px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">{{sumDv}}</div>
+              <div style="font-size:11.5px;color:#5F6368;margin-top:2px;white-space:nowrap;">EUR equivalent</div>
+            </div>
+            <button onClick="{{qAwait}}" title="Filter to declarations awaiting release" style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:11px 14px;min-width:0;font:inherit;text-align:left;cursor:pointer;{{sumAwaitOn}}" style-hover="background:#F1F4F5;" style-focus="outline:2px solid #1E5A8A;outline-offset:-2px;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;white-space:nowrap;">Not yet released</div>
+              <div style="font-size:20px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">{{sumAwait}}</div>
+              <div style="font-size:11.5px;color:#174A73;margin-top:2px;white-space:nowrap;">Select to filter</div>
+            </button>
+            <button onClick="{{qGaps}}" title="Filter to declarations with data gaps" style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:11px 14px;min-width:0;font:inherit;text-align:left;cursor:pointer;{{sumGapsOn}}" style-hover="background:#F1F4F5;" style-focus="outline:2px solid #1E5A8A;outline-offset:-2px;">
+              <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;white-space:nowrap;">With data gaps <span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="Declarations with a required field not populated, or values not yet compared with the source record. Details are labelled on each declaration." style="display:inline-flex;width:13px;height:13px;border:1px solid #A9ACB0;border-radius:50%;color:#6B6E72;font-size:9px;align-items:center;justify-content:center;cursor:help;text-transform:none;">i</span></div>
+              <div style="font-size:20px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums;letter-spacing:-0.01em;">{{sumGaps}}</div>
+              <div style="font-size:11.5px;color:#174A73;margin-top:2px;white-space:nowrap;">Select to filter</div>
+            </button>
+          </div>
+
+          <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;margin-top:12px;padding:12px 14px;">
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <input value="{{rf.q}}" onChange="{{setQ}}" placeholder="Search by MRN or customer reference…" aria-label="Search declarations" style="height:31px;flex:1;min-width:220px;max-width:340px;padding:0 10px;border:1px solid #D5D9DE;border-radius:5px;font:inherit;font-size:12.5px;" style-focus="outline:2px solid #1E5A8A;outline-offset:1px;">
+              <select value="{{f.period}}" onChange="{{setF}}" name="period" aria-label="Date range" style="height:31px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;">
+                <option value="1m">This month</option>
+                <option value="3m">Last 3 months</option>
+                <option value="6m">Last 6 months</option>
+                <option value="ytd">Year to date</option>
+              </select>
+              <select value="{{f.country}}" onChange="{{setF}}" name="country" aria-label="Declaration country" style="height:31px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;">
+                <option value="all">All countries</option>
+                <sc-for list="{{countryOpts}}" as="o" hint-placeholder-count="4"><option value="{{o.v}}">{{o.label}}</option></sc-for>
+              </select>
+              <select value="{{f.type}}" onChange="{{setF}}" name="type" aria-label="Declaration type" style="height:31px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;">
+                <option value="all">All types</option>
+                <option value="import">Import</option>
+                <option value="export">Export</option>
+                <option value="transit">Transit</option>
+              </select>
+              <select value="{{f.status}}" onChange="{{setF}}" name="status" aria-label="Declaration status" style="height:31px;padding:0 8px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;">
+                <option value="all">All statuses</option>
+                <sc-for list="{{statusOpts}}" as="o" hint-placeholder-count="4"><option value="{{o}}">{{o}}</option></sc-for>
+              </select>
+              <button onClick="{{resetAll}}" style="height:31px;padding:0 11px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;color:#5F6368;cursor:pointer;" style-hover="background:#F1F4F4;">Reset</button>
+            </div>
+            <sc-if value="{{chipsShow}}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid #EDEFF2;">
+                <span style="font-size:11.5px;color:#6B6E72;">Active filters:</span>
+                <sc-for list="{{chips}}" as="ch" hint-placeholder-count="2">
+                  <button onClick="{{chipX}}" data-k="{{ch.k}}" title="Remove filter" style="display:inline-flex;align-items:center;gap:6px;background:#E9F0F7;color:#174A73;border:1px solid #C9DBEA;border-radius:12px;padding:3px 10px;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;" style-hover="background:#DCE8F2;">{{ch.label}} <span style="font-weight:400;">&#10005;</span></button>
+                </sc-for>
+                <button onClick="{{resetAll}}" style="border:none;background:none;font:inherit;font-size:11.5px;color:#1E5A8A;cursor:pointer;text-decoration:underline;">Clear all</button>
+              </div>
+            </sc-if>
+          </div>
+
+          <sc-if value="{{regEmpty}}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:14px;background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:44px;text-align:center;">
+              <div style="font-size:14px;font-weight:600;">No declarations match your filters</div>
+              <div style="font-size:12.5px;color:#5F6368;margin-top:5px;">Try widening the date range or removing a filter. Data begins 1 March 2026.</div>
+              <div style="margin-top:14px;"><button onClick="{{resetAll}}" style="height:31px;padding:0 13px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;cursor:pointer;" style-hover="background:#F1F4F4;">Clear all filters</button></div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{regShow}}" hint-placeholder-val="{{ true }}">
+          <div style="margin-top:14px;background:#fff;border:1px solid #E1E4E8;border-radius:6px;overflow:hidden;">
+            <div style="overflow-x:auto;">
+              <div style="display:grid;grid-template-columns:150px 182px 130px 118px 140px 82px 178px 178px 92px 112px 132px 118px 118px;width:max-content;min-width:100%;background:#F9FAFB;border-bottom:1px solid #E1E4E8;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">
+                <div style="padding:8px 10px;position:sticky;left:0;background:#F9FAFB;z-index:1;">Status</div>
+                <div style="padding:8px 10px;position:sticky;left:150px;background:#F9FAFB;z-index:1;border-right:1px solid #E1E4E8;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="Movement Reference Number — the unique identifier customs assigns to a declaration." style="border-bottom:1px dotted #9A9C9F;cursor:help;">MRN</span></div>
+                <div style="padding:8px 10px;">Customer ref.</div>
+                <div style="padding:8px 10px;"><button onClick="{{sortBy}}" data-k="date" style="border:none;background:none;font:inherit;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#3A3D40;cursor:pointer;padding:0;">Cleared{{sortDate}}</button></div>
+                <div style="padding:8px 10px;">Country</div>
+                <div style="padding:8px 10px;">Type</div>
+                <div style="padding:8px 10px;">Importer / buyer</div>
+                <div style="padding:8px 10px;">Exporter / seller</div>
+                <div style="padding:8px 10px;">Origin</div>
+                <div style="padding:8px 10px;">Destination</div>
+                <div style="padding:8px 10px;text-align:right;"><button onClick="{{sortBy}}" data-k="val" style="border:none;background:none;font:inherit;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#3A3D40;cursor:pointer;padding:0;">Customs value{{sortVal}}</button></div>
+                <div style="padding:8px 10px;text-align:right;"><button onClick="{{sortBy}}" data-k="duty" style="border:none;background:none;font:inherit;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#3A3D40;cursor:pointer;padding:0;">Duty{{sortDuty}}</button></div>
+                <div style="padding:8px 10px;text-align:right;"><button onClick="{{sortBy}}" data-k="vat" style="border:none;background:none;font:inherit;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#3A3D40;cursor:pointer;padding:0;">VAT{{sortVat}}</button></div>
+              </div>
+              <sc-for list="{{regRows}}" as="r" hint-placeholder-count="10">
+                <div onClick="{{openDecl}}" data-id="{{r.id}}" role="button" tabIndex="0" style="display:grid;grid-template-columns:150px 182px 130px 118px 140px 82px 178px 178px 92px 112px 132px 118px 118px;width:max-content;min-width:100%;background:#FFFFFF;border-bottom:1px solid #F1F3F5;font-size:12.5px;cursor:pointer;align-items:center;" style-hover="background:#F1F4F4;" style-focus="outline:2px solid #1E5A8A;outline-offset:-2px;">
+                  <div style="padding:7px 10px;position:sticky;left:0;background:inherit;z-index:1;"><span style="display:inline-flex;align-items:center;gap:6px;white-space:nowrap;"><span style="width:7px;height:7px;border-radius:50%;background:{{r.dot}};flex-shrink:0;"></span>{{r.status}}</span></div>
+                  <div style="padding:7px 10px;position:sticky;left:150px;background:inherit;z-index:1;border-right:1px solid #EDEFF2;font-family:'Spline Sans Mono',monospace;font-size:11.5px;white-space:nowrap;">{{r.mrn}}</div>
+                  <div style="padding:7px 10px;font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{r.ref}}</div>
+                  <div style="padding:7px 10px;white-space:nowrap;font-variant-numeric:tabular-nums;">{{r.date}}</div>
+                  <div style="padding:7px 10px;white-space:nowrap;">{{r.country}}</div>
+                  <div style="padding:7px 10px;">{{r.type}}</div>
+                  <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{r.importer}}</div>
+                  <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{r.exporter}}</div>
+                  <div style="padding:7px 10px;">{{r.origin}}</div>
+                  <div style="padding:7px 10px;">{{r.dest}}</div>
+                  <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{r.val}}</div>
+                  <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{r.duty}}</div>
+                  <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;">{{r.vat}}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #EDEFF2;background:#F9FAFB;">
+              <div style="font-size:12px;color:#5F6368;font-variant-numeric:tabular-nums;">{{pgInfo}}</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button onClick="{{pgPrev}}" disabled="{{pgPrevDis}}" style="height:29px;padding:0 12px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12px;cursor:pointer;" style-hover="background:#F1F4F4;">&#8592; Previous</button>
+                <span style="font-size:12px;color:#5F6368;font-variant-numeric:tabular-nums;">{{pgLbl}}</span>
+                <button onClick="{{pgNext}}" disabled="{{pgNextDis}}" style="height:29px;padding:0 12px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12px;cursor:pointer;" style-hover="background:#F1F4F4;">Next &#8594;</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{scrD}}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Declaration detail" style="padding:18px 26px 40px;">
+          <button onClick="{{backToReg}}" style="border:none;background:none;font:inherit;font-size:12.5px;color:#1E5A8A;cursor:pointer;padding:0;font-weight:600;" style-hover="text-decoration:underline;">&#8592; Back to declarations</button>
+
+          <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;margin-top:12px;padding:16px 20px;">
+            <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+              <div style="flex:1;min-width:420px;">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                  <span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="Movement Reference Number — the unique identifier customs assigns to a declaration." style="font-family:'Spline Sans Mono',monospace;font-size:17px;font-weight:600;letter-spacing:0.01em;cursor:help;">{{d.mrn}}</span>
+                  <button onClick="{{copyMrn}}" title="Copy MRN" style="height:26px;padding:0 9px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:11.5px;color:#5F6368;cursor:pointer;" style-hover="background:#F1F4F4;">Copy</button>
+                  <span style="display:inline-flex;align-items:center;gap:6px;background:#F2F3F5;border:1px solid #E1E4E8;border-radius:12px;padding:3px 11px;font-size:12px;font-weight:600;"><span style="width:7px;height:7px;border-radius:50%;background:{{d.dot}};"></span>{{d.status}}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(6,auto);gap:4px 26px;margin-top:14px;justify-content:start;">
+                  <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Type</div><div style="font-size:12.5px;margin-top:2px;">{{d.typeLabel}}</div></div>
+                  <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Country</div><div style="font-size:12.5px;margin-top:2px;">{{d.country}}</div></div>
+                  <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Clearance date</div><div style="font-size:12.5px;margin-top:2px;font-variant-numeric:tabular-nums;">{{d.clearance}}</div></div>
+                  <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Release date</div><div style="font-size:12.5px;margin-top:2px;font-variant-numeric:tabular-nums;">{{d.release}}</div></div>
+                  <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Customer reference</div><div style="font-size:12.5px;margin-top:2px;font-family:'Spline Sans Mono',monospace;">{{d.ref}}</div></div>
+                  <div><div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Goods lines</div><div style="font-size:12.5px;margin-top:2px;font-variant-numeric:tabular-nums;">{{d.linesN}}</div></div>
+                </div>
+              </div>
+              <div style="display:flex;gap:26px;align-items:flex-start;">
+                <div style="text-align:right;">
+                  <div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Customs value</div>
+                  <div style="font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;">{{d.valStr}}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Total duty</div>
+                  <div style="font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;">{{d.dutyStr}}</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">Total VAT</div>
+                  <div style="font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;margin-top:2px;">{{d.vatStr}}</div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #EDEFF2;">
+              <button onClick="{{exportDecl}}" style="height:31px;padding:0 14px;border:none;border-radius:5px;background:#1E5A8A;color:#fff;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;">Export declaration</button>
+              <button onClick="{{viewAvail}}" style="height:31px;padding:0 13px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;cursor:pointer;" style-hover="background:#F1F4F4;">Data availability</button>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:2px;margin-top:16px;border-bottom:1px solid #E1E4E8;">
+            <button onClick="{{setTab}}" data-t="overview" style="border:none;background:none;font:inherit;font-size:13px;padding:9px 14px;cursor:pointer;{{tabOv}}">Summary</button>
+            <button onClick="{{setTab}}" data-t="parties" style="border:none;background:none;font:inherit;font-size:13px;padding:9px 14px;cursor:pointer;{{tabPa}}">Parties and movement</button>
+            <button onClick="{{setTab}}" data-t="goods" style="border:none;background:none;font:inherit;font-size:13px;padding:9px 14px;cursor:pointer;{{tabGo}}">Goods lines ({{d.linesN}})</button>
+            <button onClick="{{setTab}}" data-t="values" style="border:none;background:none;font:inherit;font-size:13px;padding:9px 14px;cursor:pointer;{{tabVa}}">Values, duties and taxes</button>
+            <button onClick="{{setTab}}" data-t="references" style="border:none;background:none;font:inherit;font-size:13px;padding:9px 14px;cursor:pointer;{{tabRe}}">References and information</button>
+            <button onClick="{{setTab}}" data-t="assurance" style="border:none;background:none;font:inherit;font-size:13px;padding:9px 14px;cursor:pointer;{{tabDa}}">Data availability and freshness</button>
+          </div>
+
+          <sc-if value="{{tOv}}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;align-items:start;">
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Declaration</div>
+                <div style="display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">MRN</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.mrn}}</div>
+                  <div style="color:#6B6E72;">Status</div><div>{{d.status}}</div>
+                  <div style="color:#6B6E72;">Declaration type</div><div>{{d.typeLabel}}</div>
+                  <div style="color:#6B6E72;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="The customs procedure the goods are declared for, e.g. release for free circulation." style="border-bottom:1px dotted #9A9C9F;cursor:help;">Customs procedure</span></div><div>{{d.procedure}}</div>
+                  <div style="color:#6B6E72;">Declaration country</div><div>{{d.country}}</div>
+                  <div style="color:#6B6E72;">Clearance date</div><div style="font-variant-numeric:tabular-nums;">{{d.clearance}}</div>
+                  <div style="color:#6B6E72;">Release date</div><div style="font-variant-numeric:tabular-nums;">{{d.release}}</div>
+                  <div style="color:#6B6E72;">Origin</div><div>{{d.originName}}</div>
+                  <div style="color:#6B6E72;">Destination</div><div>{{d.destName}}</div>
+                  <div style="color:#6B6E72;">Transport mode</div><div>{{d.mode}}</div>
+                  <div style="color:#6B6E72;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="The agreed commercial delivery terms between buyer and seller." style="border-bottom:1px dotted #9A9C9F;cursor:help;">Incoterms</span></div><div>{{d.incoterms}}</div>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Value summary</div>
+                <div style="display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">Total invoice value</div><div style="font-variant-numeric:tabular-nums;">{{d.invoiceStr}}</div>
+                  <div style="color:#6B6E72;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="The value of the goods for customs purposes: invoice value plus transport and insurance to the border." style="border-bottom:1px dotted #9A9C9F;cursor:help;">Customs value</span></div><div style="font-variant-numeric:tabular-nums;">{{d.valStr}}</div>
+                  <div style="color:#6B6E72;">Duty</div><div style="font-variant-numeric:tabular-nums;">{{d.dutyStr}}</div>
+                  <div style="color:#6B6E72;">VAT</div><div style="font-variant-numeric:tabular-nums;">{{d.vatStr}}</div>
+                  <div style="color:#6B6E72;">Goods lines</div><div style="font-variant-numeric:tabular-nums;">{{d.linesN}}</div>
+                  <div style="color:#6B6E72;">Currency</div><div>{{d.curNote}}</div>
+                </div>
+                <div style="font-size:11px;color:#8A8D91;margin-top:12px;">Totals reconcile with the goods lines on this declaration.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{tPa}}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;align-items:start;">
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Trade parties</div>
+                <div style="display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">Importer / buyer</div><div>{{d.impName}}</div>
+                  <div style="color:#6B6E72;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="Economic Operators Registration and Identification number — the trader ID used by customs." style="border-bottom:1px dotted #9A9C9F;cursor:help;">Importer EORI</span></div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.impEori}}</div>
+                  <div style="color:#6B6E72;">Exporter / seller</div><div>{{d.expName}}</div>
+                  <div style="color:#6B6E72;">Exporter EORI</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.expEori}}</div>
+                  <div style="color:#6B6E72;">Declarant</div><div>{{d.declName}}</div>
+                  <div style="color:#6B6E72;">Declarant EORI</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.declEori}}</div>
+                  <div style="color:#6B6E72;">Customs broker</div><div>{{d.brokerName}}</div>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Movement</div>
+                <div style="display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">Origin country</div><div>{{d.originName}}</div>
+                  <div style="color:#6B6E72;">Exporting country</div><div>{{d.exportingName}}</div>
+                  <div style="color:#6B6E72;">Destination country</div><div>{{d.destName}}</div>
+                  <div style="color:#6B6E72;">Declaration country</div><div>{{d.country}}</div>
+                  <div style="color:#6B6E72;">Border transport mode</div><div>{{d.mode}}</div>
+                  <div style="color:#6B6E72;">Presentation office</div><div>{{d.office}}</div>
+                  <div style="color:#6B6E72;">Containerised</div><div>{{d.contInd}}</div>
+                  <div style="color:#6B6E72;">Transport equipment</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.container}}</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{tGo}}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:16px;background:#fff;border:1px solid #E1E4E8;border-radius:6px;overflow:hidden;">
+              <div style="padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #EDEFF2;">
+                <div style="font-size:13.5px;font-weight:600;">Goods lines</div>
+                <div style="font-size:11.5px;color:#8A8D91;">{{d.valuesNote}} · select a line for additional information</div>
+              </div>
+              <div style="overflow-x:auto;">
+                <div style="display:grid;grid-template-columns:36px 46px 108px 230px 72px 168px 152px 90px 90px 80px 110px 112px 76px 105px 70px 105px;width:max-content;min-width:100%;background:#F9FAFB;border-bottom:1px solid #E1E4E8;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">
+                  <div style="padding:8px 6px;"></div>
+                  <div style="padding:8px 8px;">Line</div>
+                  <div style="padding:8px 10px;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="The tariff classification of the goods, which determines the duty rate." style="border-bottom:1px dotted #9A9C9F;cursor:help;">Commodity</span></div>
+                  <div style="padding:8px 10px;">Goods description</div>
+                  <div style="padding:8px 10px;">Origin</div>
+                  <div style="padding:8px 10px;">Customs procedure</div>
+                  <div style="padding:8px 10px;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="Whether a reduced or zero duty rate is claimed under a trade agreement." style="border-bottom:1px dotted #9A9C9F;cursor:help;">Preference</span></div>
+                  <div style="padding:8px 10px;text-align:right;">Gross kg</div>
+                  <div style="padding:8px 10px;text-align:right;">Net kg</div>
+                  <div style="padding:8px 10px;text-align:right;">Quantity</div>
+                  <div style="padding:8px 10px;text-align:right;">Item value</div>
+                  <div style="padding:8px 10px;text-align:right;">Customs value</div>
+                  <div style="padding:8px 10px;text-align:right;">Duty rate</div>
+                  <div style="padding:8px 10px;text-align:right;">Duty</div>
+                  <div style="padding:8px 10px;text-align:right;">VAT rate</div>
+                  <div style="padding:8px 10px;text-align:right;">VAT</div>
+                </div>
+                <sc-for list="{{glines}}" as="l" hint-placeholder-count="3">
+                  <div>
+                    <div onClick="{{toggleLine}}" data-n="{{l.no}}" role="button" tabIndex="0" style="display:grid;grid-template-columns:36px 46px 108px 230px 72px 168px 152px 90px 90px 80px 110px 112px 76px 105px 70px 105px;width:max-content;min-width:100%;background:#FFFFFF;border-bottom:1px solid #F1F3F5;font-size:12.5px;cursor:pointer;align-items:center;" style-hover="background:#F1F4F4;">
+                      <div style="padding:7px 6px;color:#6B6E72;text-align:center;">{{l.caret}}</div>
+                      <div style="padding:7px 8px;font-variant-numeric:tabular-nums;">{{l.no}}</div>
+                      <div style="padding:7px 10px;font-family:'Spline Sans Mono',monospace;font-size:11.5px;white-space:nowrap;">{{l.code}}</div>
+                      <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{l.desc}}</div>
+                      <div style="padding:7px 10px;">{{l.origin}}</div>
+                      <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#5F6368;">{{l.proc}}</div>
+                      <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#5F6368;">{{l.pref}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.gross}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;"><sc-if value="{{l.netNp}}" hint-placeholder-val="{{ false }}"><span style="background:#FDF3E1;color:#9A5B00;border:1px solid #F0DFC0;border-radius:9px;padding:1px 7px;font-size:10.5px;font-weight:600;white-space:nowrap;">Not populated</span></sc-if><sc-if value="{{l.netOk}}" hint-placeholder-val="{{ true }}">{{l.net}}</sc-if></div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.qty}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.item}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.customs}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.dRate}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.duty}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.vRate}}</div>
+                      <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{l.vat}}</div>
+                    </div>
+                    <sc-if value="{{l.exp}}" hint-placeholder-val="{{ false }}">
+                      <div style="border-bottom:1px solid #F1F3F5;background:#F9FAFB;">
+                        <div style="position:sticky;left:0;width:min(1040px,96vw);padding:14px 20px 16px 46px;">
+                          <div style="font-size:11px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;margin-bottom:10px;">Line {{l.no}} — additional information</div>
+                          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px 20px;">
+                            <sc-for list="{{l.xf}}" as="x" hint-placeholder-count="10">
+                              <div>
+                                <div style="font-size:10.5px;font-weight:600;letter-spacing:0.03em;text-transform:uppercase;color:#8A8D91;">{{x.k}}</div>
+                                <div style="font-size:12px;margin-top:3px;">
+                                  <sc-if value="{{x.plain}}" hint-placeholder-val="{{ true }}">{{x.v}}</sc-if>
+                                  <sc-if value="{{x.warn}}" hint-placeholder-val="{{ false }}"><span style="background:#FDF3E1;color:#9A5B00;border:1px solid #F0DFC0;border-radius:9px;padding:1px 8px;font-size:10.5px;font-weight:600;">{{x.label}}</span></sc-if>
+                                  <sc-if value="{{x.muted}}" hint-placeholder-val="{{ false }}"><span style="background:#F2F3F5;color:#6B6E72;border:1px solid #E1E4E8;border-radius:9px;padding:1px 8px;font-size:10.5px;font-weight:600;">{{x.label}}</span></sc-if>
+                                </div>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </div>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="padding:9px 16px;border-top:1px solid #EDEFF2;background:#F9FAFB;display:flex;gap:16px;font-size:11px;color:#6B6E72;flex-wrap:wrap;">
+                <span>Field states:</span>
+                <span><span style="background:#F2F3F5;border:1px solid #E1E4E8;border-radius:9px;padding:0 7px;font-weight:600;">Not applicable</span> — does not apply to this declaration</span>
+                <span><span style="background:#F2F3F5;border:1px solid #E1E4E8;border-radius:9px;padding:0 7px;font-weight:600;">Not available</span> — not provided by the source</span>
+                <span><span style="background:#FDF3E1;border:1px solid #F0DFC0;border-radius:9px;padding:0 7px;font-weight:600;color:#9A5B00;">Not populated</span> — required but missing</span>
+                <span><span style="background:#FDF3E1;border:1px solid #F0DFC0;border-radius:9px;padding:0 7px;font-weight:600;color:#9A5B00;">Not verified</span> — not yet compared with the source record</span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{tVa}}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:14px;margin-top:16px;align-items:start;">
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;overflow:hidden;">
+                <div style="padding:12px 16px;border-bottom:1px solid #EDEFF2;display:flex;justify-content:space-between;align-items:center;">
+                  <div style="font-size:13.5px;font-weight:600;">Reconciliation by goods line</div>
+                  <div style="font-size:11.5px;color:#8A8D91;">{{d.valuesNote}}</div>
+                </div>
+                <div style="display:grid;grid-template-columns:46px 1fr 110px 115px 80px 105px 80px 105px;background:#F9FAFB;border-bottom:1px solid #E1E4E8;font-size:10.5px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:#6B6E72;">
+                  <div style="padding:8px 8px;">Line</div><div style="padding:8px 10px;">Description</div><div style="padding:8px 10px;text-align:right;">Item value</div><div style="padding:8px 10px;text-align:right;">Customs value</div><div style="padding:8px 10px;text-align:right;">Duty rate</div><div style="padding:8px 10px;text-align:right;">Duty</div><div style="padding:8px 10px;text-align:right;">VAT rate</div><div style="padding:8px 10px;text-align:right;">VAT</div>
+                </div>
+                <sc-for list="{{vLines}}" as="v" hint-placeholder-count="3">
+                  <div style="display:grid;grid-template-columns:46px 1fr 110px 115px 80px 105px 80px 105px;border-bottom:1px solid #F1F3F5;font-size:12.5px;align-items:center;">
+                    <div style="padding:7px 8px;font-variant-numeric:tabular-nums;">{{v.no}}</div>
+                    <div style="padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{v.desc}}</div>
+                    <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{v.item}}</div>
+                    <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{v.customs}}</div>
+                    <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{v.dRate}}</div>
+                    <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{v.duty}}</div>
+                    <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{v.vRate}}</div>
+                    <div style="padding:7px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{v.vat}}</div>
+                  </div>
+                </sc-for>
+                <div style="display:grid;grid-template-columns:46px 1fr 110px 115px 80px 105px 80px 105px;background:#F9FAFB;font-size:12.5px;font-weight:700;align-items:center;">
+                  <div style="padding:9px 8px;"></div>
+                  <div style="padding:9px 10px;">Declaration totals</div>
+                  <div style="padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{d.vTotItem}}</div>
+                  <div style="padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{d.vTotCustoms}}</div>
+                  <div style="padding:9px 10px;"></div>
+                  <div style="padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{d.vTotDuty}}</div>
+                  <div style="padding:9px 10px;"></div>
+                  <div style="padding:9px 10px;text-align:right;font-variant-numeric:tabular-nums;">{{d.vTotVat}}</div>
+                </div>
+                <div style="padding:9px 16px;border-top:1px solid #EDEFF2;font-size:11.5px;">
+                  <sc-if value="{{d.reconOk}}" hint-placeholder-val="{{ true }}"><span style="color:#1E7A46;font-weight:600;">&#10003; Reconciled</span><span style="color:#5F6368;"> — the goods lines sum exactly to the declaration totals shown above.</span></sc-if>
+                  <sc-if value="{{d.reconBad}}" hint-placeholder-val="{{ false }}"><span style="color:#9A5B00;font-weight:600;">&#9650; Difference found</span><span style="color:#5F6368;"> — the goods lines do not sum to the declaration totals. Contact your customs service team.</span></sc-if>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Declaration amounts</div>
+                <div style="display:grid;grid-template-columns:1fr auto;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">Invoice amount</div><div style="text-align:right;font-variant-numeric:tabular-nums;">{{d.invoiceStr}}</div>
+                  <div style="color:#6B6E72;">Transport costs</div><div style="text-align:right;font-variant-numeric:tabular-nums;">{{d.transportStr}}</div>
+                  <div style="color:#6B6E72;">Insurance costs</div><div style="text-align:right;font-variant-numeric:tabular-nums;">{{d.insuranceStr}}</div>
+                  <div style="color:#6B6E72;">Deductions</div><div style="text-align:right;color:#6B6E72;">None declared</div>
+                  <div style="font-weight:600;">Customs value</div><div style="text-align:right;font-weight:600;font-variant-numeric:tabular-nums;">{{d.valStr}}</div>
+                  <div style="color:#6B6E72;">Duty</div><div style="text-align:right;font-variant-numeric:tabular-nums;">{{d.dutyStr}}</div>
+                  <div style="color:#6B6E72;">VAT</div><div style="text-align:right;font-variant-numeric:tabular-nums;">{{d.vatStr}}</div>
+                  <div style="color:#6B6E72;">Excise</div><div style="text-align:right;color:#6B6E72;">Not applicable</div>
+                </div>
+                <div style="margin-top:14px;padding-top:12px;border-top:1px solid #EDEFF2;font-size:11.5px;color:#5F6368;line-height:1.5;">
+                  <div><strong>Currency:</strong> {{d.curNote}}</div>
+                  <div style="margin-top:4px;">{{d.fxNote}}</div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{tRe}}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;align-items:start;">
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">References</div>
+                <div style="display:grid;grid-template-columns:190px 1fr;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">MRN</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.mrn}}</div>
+                  <div style="color:#6B6E72;">Declaration number</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.declNo}}</div>
+                  <div style="color:#6B6E72;">Customer reference</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.ref}}</div>
+                  <div style="color:#6B6E72;"><span onMouseEnter="{{tipShow}}" onMouseLeave="{{tipHide}}" data-tip="Unique Consignment Reference — a trader-assigned reference linking the declaration to your records." style="border-bottom:1px dotted #9A9C9F;cursor:help;">UCR</span></div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.ucr}}</div>
+                  <div style="color:#6B6E72;">Additional references</div><div style="font-family:'Spline Sans Mono',monospace;font-size:11.5px;">{{d.addRefs}}</div>
+                  <div style="color:#6B6E72;">Due-diligence statement</div><div>{{d.dd}}</div>
+                </div>
+              </div>
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Document references</div>
+                <sc-for list="{{docs}}" as="doc" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F1F3F5;">
+                    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#6B6E72" stroke-width="1.4"><rect x="3" y="2" width="10" height="12" rx="1"></rect><path d="M6 6h4M6 9h4"></path></svg>
+                    <div>
+                      <div style="font-size:12.5px;font-weight:600;">{{doc.name}}</div>
+                      <div style="font-size:11.5px;color:#8A8D91;margin-top:1px;">{{doc.note}}</div>
+                    </div>
+                  </div>
+                </sc-for>
+                <div style="font-size:11px;color:#8A8D91;margin-top:10px;">Document references only — original declaration documents are not stored in Customs Insights.</div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{tDa}}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;align-items:start;">
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Availability and freshness</div>
+                <div style="display:grid;grid-template-columns:210px 1fr;gap:9px 14px;font-size:12.5px;">
+                  <div style="color:#6B6E72;">In Customs Insights</div><div>{{d.aIncluded}}</div>
+                  <div style="color:#6B6E72;">Received</div><div style="font-variant-numeric:tabular-nums;">{{d.aReceived}}</div>
+                  <div style="color:#6B6E72;">Processed</div><div style="font-variant-numeric:tabular-nums;">{{d.aProcessed}}</div>
+                  <div style="color:#6B6E72;">Last update</div><div style="font-variant-numeric:tabular-nums;{{d.aUpdCss}}">{{d.aUpdated}}</div>
+                  <div style="color:#6B6E72;">Source comparison</div>
+                  <div>
+                    <sc-if value="{{d.aVerOk}}" hint-placeholder-val="{{ true }}"><span style="display:inline-flex;align-items:center;gap:5px;background:#E9F5EC;color:#1E7A46;border:1px solid #CBE7D3;border-radius:11px;padding:2px 9px;font-size:11.5px;font-weight:600;">&#10003; Compared with source record</span></sc-if>
+                    <sc-if value="{{d.aVerWarn}}" hint-placeholder-val="{{ false }}"><span style="display:inline-flex;align-items:center;gap:5px;background:#FDF3E1;color:#9A5B00;border:1px solid #F0DFC0;border-radius:11px;padding:2px 9px;font-size:11.5px;font-weight:600;">Not yet compared with source record</span></sc-if>
+                  </div>
+                </div>
+                <sc-if value="{{d.aStale}}" hint-placeholder-val="{{ false }}">
+                  <div style="margin-top:12px;border:1px solid #F0DFC0;background:#FDF6E9;border-radius:6px;padding:10px 14px;font-size:12px;color:#8A5B10;line-height:1.5;">This declaration was not updated in the most recent refresh. Values shown are from the last successful update.</div>
+                </sc-if>
+              </div>
+              <div style="background:#fff;border:1px solid #E1E4E8;border-radius:6px;padding:16px 20px;">
+                <div style="font-size:13.5px;font-weight:600;margin-bottom:10px;">Fields not available or not verified</div>
+                <sc-if value="{{d.aClean}}" hint-placeholder-val="{{ true }}">
+                  <div style="font-size:12.5px;color:#5F6368;padding:10px 0;">All required fields on this declaration are populated, and its values have been compared with the source record.</div>
+                </sc-if>
+                <sc-for list="{{aMissing}}" as="mx" hint-placeholder-count="1">
+                  <div style="border:1px solid #F0DFC0;background:#FDF6E9;border-radius:6px;padding:11px 14px;margin-bottom:10px;">
+                    <div style="font-size:12.5px;font-weight:600;color:#7A4A00;">{{mx.field}}</div>
+                    <div style="font-size:12px;color:#8A5B10;margin-top:4px;line-height:1.5;">{{mx.impact}}</div>
+                  </div>
+                </sc-for>
+                <div style="font-size:11px;color:#8A8D91;margin-top:8px;">Believe something is missing or incorrect? <a href="#" onClick="{{protoOnly}}">Contact your customs service team</a>.</div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{scrP}}" hint-placeholder-val="{{ false }}">
+          <div data-screen-label="Planned placeholder" style="padding:22px 26px;">
+            <h1 style="font-size:21px;font-weight:700;letter-spacing:-0.01em;margin:0;">{{phTitle}}</h1>
+            <div style="margin-top:16px;background:#fff;border:1px dashed #D5D9DE;border-radius:6px;padding:52px;text-align:center;">
+              <div style="display:inline-block;font-size:10px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;border:1px solid #D5D9DE;border-radius:9px;padding:2px 9px;color:#8A8D91;margin-bottom:10px;">Planned — not in the launch version</div>
+              <div style="font-size:14px;font-weight:600;">This area is not yet functional</div>
+              <div style="font-size:12.5px;color:#5F6368;margin-top:6px;max-width:440px;margin-left:auto;margin-right:auto;line-height:1.5;">{{phDesc}}</div>
+              <div style="margin-top:16px;"><button onClick="{{nav}}" data-s="register" style="height:31px;padding:0 13px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;cursor:pointer;" style-hover="background:#F1F4F4;">Back to declarations</button></div>
+            </div>
+          </div>
+        </sc-if>
+      </main>
+    </div>
+
+    <sc-if value="{{userOpen}}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{closePops}}" style="position:fixed;inset:0;z-index:30;"></div>
+    </sc-if>
+
+    <sc-if value="{{modal}}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;inset:0;background:rgba(29,31,33,0.38);z-index:60;display:flex;align-items:center;justify-content:center;">
+        <div style="background:#fff;border-radius:8px;width:470px;padding:22px 24px;box-shadow:0 16px 48px rgba(29,31,33,0.22);">
+          <div style="font-size:15.5px;font-weight:700;">{{modal.title}}</div>
+          <div style="display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:12.5px;margin-top:14px;">
+            <div style="color:#6B6E72;">Legal entity</div><div>{{mEntity}}</div>
+            <div style="color:#6B6E72;">Date range</div><div>{{mRange}}</div>
+            <div style="color:#6B6E72;">Countries</div><div>{{mCountries}}</div>
+            <div style="color:#6B6E72;">Declaration types</div><div>{{mTypes}}</div>
+            <div style="color:#6B6E72;">Declarations</div><div style="font-variant-numeric:tabular-nums;">{{mCount}}</div>
+          </div>
+          <div style="margin-top:14px;padding-top:12px;border-top:1px solid #EDEFF2;display:flex;flex-direction:column;gap:9px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;cursor:pointer;"><input type="checkbox" checked="{{mInc}}" onChange="{{mToggleInc}}">Include goods-line detail</label>
+            <div style="display:flex;align-items:center;gap:16px;font-size:12.5px;">
+              <span style="color:#6B6E72;">File format:</span>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="mfmt" value="csv" checked="{{mFmtCsv}}" onChange="{{mFmt}}">CSV</label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="radio" name="mfmt" value="xlsx" checked="{{mFmtXlsx}}" onChange="{{mFmt}}">Excel (XLSX)</label>
+            </div>
+          </div>
+          <div style="margin-top:12px;background:#F9FAFB;border:1px solid #E3E6EA;border-radius:6px;padding:9px 12px;font-size:11.5px;color:#5F6368;line-height:1.5;">{{mNote}}</div>
+          <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+            <button onClick="{{exportCancel}}" style="height:33px;padding:0 14px;border:1px solid #D5D9DE;border-radius:5px;background:#fff;font:inherit;font-size:12.5px;cursor:pointer;" style-hover="background:#F1F4F4;">Cancel</button>
+            <button onClick="{{exportConfirm}}" style="height:33px;padding:0 16px;border:none;border-radius:5px;background:#1E5A8A;color:#fff;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;" style-hover="background:#17466C;">{{mBtn}}</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{tip}}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;left:{{tip.x}}px;top:{{tip.y}}px;transform:translateX(-50%);background:#1D1F21;color:#F5F6F8;font-size:11.5px;line-height:1.45;padding:8px 11px;border-radius:6px;max-width:280px;z-index:70;pointer-events:none;box-shadow:0 6px 18px rgba(29,31,33,0.25);">{{tip.t}}</div>
+    </sc-if>
+
+    <sc-if value="{{toast}}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#1D1F21;color:#F5F6F8;font-size:12.5px;padding:10px 18px;border-radius:6px;z-index:80;box-shadow:0 8px 24px rgba(29,31,33,0.3);">{{toast}}</div>
+    </sc-if>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900},&quot;currencyView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Original currency&quot;,&quot;EUR equivalent&quot;],&quot;default&quot;:&quot;Original currency&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Display&quot;},&quot;demoState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;loading&quot;,&quot;error&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Prototype states&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, err: false, screen: 'register', tab: 'overview', selId: null,
+    f: { period: '6m', country: 'all', type: 'all', status: 'all', entity: 'all' },
+    rf: { q: '', gaps: false },
+    sort: { k: 'date', d: -1 }, page: 1, exp: {},
+    modal: null, mInc: true, mFmtV: 'csv', toast: null, tip: null, userOpen: false, scopeOpen: false,
+  };
+  componentDidMount() { this.load(); }
+  load = () => {
+    this.setState({ err: false, ready: false });
+    Promise.all([import(new URL('customs-data.js', location.href).href), new Promise(r => setTimeout(r, 650))])
+      .then(([m]) => { this.D = m; this.setState({ ready: true }); })
+      .catch(e => { console.error('Data load failed', e); this.setState({ err: true }); });
+  };
+  mo(n, cur) { return cur + ' ' + Math.round(n).toLocaleString('en-GB'); }
+  val(d, n) { return (this.props.currencyView ?? 'Original currency') === 'EUR equivalent' ? this.mo(n * d.fx, 'EUR') : this.mo(n, d.cur); }
+  num(d, n) { return Math.round((this.props.currencyView ?? 'Original currency') === 'EUR equivalent' ? n * d.fx : n).toLocaleString('en-GB'); }
+  cmp(cur, n) { return n >= 1e6 ? cur + ' ' + (n / 1e6).toFixed(1) + 'M' : cur + ' ' + Math.round(n / 1e3).toLocaleString('en-GB') + 'k'; }
+  qAwait = () => this.setState(s => ({ f: { ...s.f, status: s.f.status === 'Awaiting release' ? 'all' : 'Awaiting release' }, page: 1 }));
+  fd(s) { if (!s) return 'Not yet released'; const M = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']; const p = s.split('-'); return +p[2] + ' ' + M[+p[1] - 1] + ' ' + p[0]; }
+  cn(c) { return (this.D.CNAMES[c] || c) + ' (' + c + ')'; }
+  rangeLbl() { return { '1m': 'This month (Aug 2026)', '3m': 'Last 3 months (Jun–Aug 2026)', '6m': 'Last 6 months (Mar–Aug 2026)', 'ytd': 'Year to date (Jan–Aug 2026)' }[this.state.f.period]; }
+  base() {
+    const { f } = this.state;
+    const from = { '1m': '2026-08-01', '3m': '2026-06-01', '6m': '2026-03-01', 'ytd': '2026-01-01' }[f.period];
+    return this.D.DECLS.filter(d => d.date >= from
+      && (f.country === 'all' || d.cc === f.country)
+      && (f.type === 'all' || d.type === f.type)
+      && (f.status === 'all' || d.status === f.status)
+      && (f.entity === 'all' || d.entity === f.entity));
+  }
+  reg() {
+    const { q, gaps } = this.state.rf;
+    const ql = q.trim().toLowerCase();
+    return this.base().filter(d => (!ql || d.mrn.toLowerCase().includes(ql) || d.ref.toLowerCase().includes(ql))
+      && (!gaps || d.assure.missing.length > 0 || d.assure.verification !== 'Verified'));
+  }
+  qGaps = () => this.setState(s => ({ rf: { ...s.rf, gaps: !s.rf.gaps }, page: 1 }));
+  nav = e => this.setState({ screen: e.currentTarget.dataset.s, userOpen: false, page: 1 });
+  setF = e => { const { name, value } = e.target; this.setState(s => ({ f: { ...s.f, [name]: value }, page: 1 })); };
+  setQ = e => { const v = e.target.value; this.setState(s => ({ rf: { q: v }, page: 1 })); };
+  resetAll = () => this.setState({ f: { period: '6m', country: 'all', type: 'all', status: 'all', entity: 'all' }, rf: { q: '', gaps: false }, page: 1 });
+  chipX = e => {
+    const k = e.currentTarget.dataset.k;
+    this.setState(s => { const f = { ...s.f }, rf = { ...s.rf }; if (k === 'q') rf.q = ''; else if (k === 'gaps') rf.gaps = false; else f[k] = 'all'; return { f, rf, page: 1 }; });
+  };
+  sortBy = e => { const k = e.currentTarget.dataset.k; this.setState(s => ({ sort: { k, d: s.sort.k === k ? -s.sort.d : -1 }, page: 1 })); };
+  pgPrev = () => this.setState(s => ({ page: Math.max(1, s.page - 1) }));
+  pgNext = () => this.setState(s => ({ page: s.page + 1 }));
+  openDecl = e => this.setState({ screen: 'detail', selId: +e.currentTarget.dataset.id, tab: 'overview', exp: {} });
+  backToReg = () => this.setState({ screen: 'register' });
+  setTab = e => this.setState({ tab: e.currentTarget.dataset.t });
+  viewAvail = () => this.setState({ tab: 'assurance' });
+  toggleLine = e => { const n = +e.currentTarget.dataset.n; this.setState(s => ({ exp: { ...s.exp, [n]: !s.exp[n] } })); };
+  copyMrn = () => { const d = this.D.DECLS.find(x => x.id === this.state.selId); try { navigator.clipboard.writeText(d.mrn); } catch (e) {} this.toastMsg('MRN copied to clipboard'); };
+  toastMsg(m) { clearTimeout(this._tt); this.setState({ toast: m }); this._tt = setTimeout(() => this.setState({ toast: null }), 2800); }
+  protoOnly = e => { if (e && e.preventDefault) e.preventDefault(); this.setState({ userOpen: false }); this.toastMsg('Not part of this prototype'); };
+  userToggle = () => this.setState(s => ({ userOpen: !s.userOpen }));
+  closePops = () => this.setState({ userOpen: false });
+  scopeToggle = () => this.setState(s => ({ scopeOpen: !s.scopeOpen }));
+  tipShow = e => { const r = e.currentTarget.getBoundingClientRect(); this.setState({ tip: { x: r.left + r.width / 2, y: r.bottom + 8, t: e.currentTarget.dataset.tip } }); };
+  tipHide = () => this.setState({ tip: null });
+  retry = () => this.load();
+  dot(st) { return { Released: '#1E7A46', Completed: '#1E7A46', Amended: '#2E5FA3', 'In transit': '#2E5FA3', 'Awaiting release': '#B45309', 'Under customs control': '#B45309' }[st] || '#6B6E72'; }
+  chipVal(v) {
+    if (v === '§na') return { plain: false, warn: false, muted: true, label: 'Not applicable' };
+    if (v === '§np') return { plain: false, warn: true, muted: false, label: 'Not populated' };
+    if (v === '§nav') return { plain: false, warn: false, muted: true, label: 'Not available' };
+    if (v === '§unv') return { plain: false, warn: true, muted: false, label: 'Not verified' };
+    return { plain: true, warn: false, muted: false, v: String(v) };
+  }
+  exportDecl = () => this.setState({ modal: { kind: 'decl', title: 'Export declaration' }, mInc: true, mFmtV: 'csv' });
+  exportReg = () => this.setState({ modal: { kind: 'reg', title: 'Export declarations' }, mInc: false, mFmtV: 'csv' });
+  exportCancel = () => this.setState({ modal: null });
+  mToggleInc = e => this.setState({ mInc: e.target.checked });
+  mFmt = e => this.setState({ mFmtV: e.target.value });
+  exportConfirm = () => {
+    const S = this.state;
+    const list = S.modal.kind === 'decl' ? [this.D.DECLS.find(x => x.id === S.selId)] : this.reg();
+    const head = ['Record type', 'MRN', 'Status', 'Clearance date', 'Country', 'Type', 'Customer reference', 'Importer/buyer', 'Exporter/seller', 'Origin', 'Destination', 'Currency', 'Customs value', 'Duty', 'VAT', 'Line no', 'Commodity code', 'Description', 'Quantity', 'Item value', 'Line customs value', 'Line duty', 'Line VAT'];
+    const rows = [head];
+    list.forEach(d => {
+      rows.push(['Declaration', d.mrn, d.status, d.date, d.countryName, d.type, d.ref, d.importer.name, d.exporter.name, d.origin, d.dest, d.cur, d.customsValue, d.duty, d.vat, '', '', '', '', '', '', '', '']);
+      if (S.mInc) d.lines.forEach(l => rows.push(['Goods line', d.mrn, '', '', '', '', '', '', '', l.origin, '', d.cur, '', '', '', l.no, l.code, l.desc, l.qty, l.item, l.customs, l.dutyAmt, l.vatAmt]));
+    });
+    const name = S.modal.kind === 'decl' ? 'declaration-' + list[0].mrn : 'declarations-export';
+    if (S.mFmtV === 'csv') {
+      const csv = rows.map(r => r.map(x => '"' + String(x ?? '').replace(/"/g, '""') + '"').join(',')).join('\n');
+      this.dl(new Blob([csv], { type: 'text/csv' }), name + '.csv');
+    } else {
+      const esc = t => String(t ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      const html = '<html><head><meta charset="utf-8"></head><body><table>' + rows.map(r => '<tr>' + r.map(x => '<td>' + esc(x) + '</td>').join('') + '</tr>').join('') + '</table></body></html>';
+      this.dl(new Blob([html], { type: 'application/vnd.ms-excel' }), name + '.xls');
+    }
+    this.setState({ modal: null });
+    this.toastMsg('Export ready — file downloaded');
+  };
+  dl(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.click(); }
+  dv(d) {
+    const cap = t => ({ import: 'Import', export: 'Export', transit: 'Transit' }[t]);
+    const eori = v => v || 'Not applicable — non-EU party';
+    const evMode = (this.props.currencyView ?? 'Original currency') === 'EUR equivalent';
+    return {
+      mrn: d.mrn, status: d.status, dot: this.dot(d.status), typeLabel: cap(d.type), country: d.countryName,
+      clearance: this.fd(d.date), release: this.fd(d.release), ref: d.ref, linesN: d.lines.length,
+      valStr: this.val(d, d.customsValue), dutyStr: this.val(d, d.duty), vatStr: this.val(d, d.vat),
+      invoiceStr: this.val(d, d.invoice), transportStr: this.val(d, d.transport), insuranceStr: this.val(d, d.insurance),
+      procedure: d.lines[0].proc, originName: this.cn(d.origin), destName: this.cn(d.dest), exportingName: this.cn(d.origin),
+      mode: d.mode, incoterms: d.incoterms, office: d.office,
+      contInd: d.container === '§na' ? 'No' : 'Yes — containerised', container: d.container === '§na' ? 'Not applicable' : d.container,
+      impName: d.importer.name, impEori: eori(d.importer.eori), expName: d.exporter.name, expEori: eori(d.exporter.eori),
+      declName: d.broker + ' (declarant)', declEori: d.brokerEori, brokerName: d.broker,
+      declNo: d.declNo, ucr: d.ucr, addRefs: d.lines.map(l => l.addRef).join(', '),
+      dd: 'Importer self-assessment on file — DD-26-' + (1000 + d.id),
+      curNote: evMode ? 'Shown as EUR equivalent' : 'Declared in ' + d.cur,
+      valuesNote: 'Values in ' + (evMode ? 'EUR (converted)' : d.cur),
+      fxNote: d.fx === 1 ? 'Declared in EUR — no conversion applied.' : 'Declared conversion rate: 1 ' + d.cur + ' = ' + d.fx + ' EUR. EUR equivalents use this declared rate only.',
+      vTotItem: this.num(d, d.invoice), vTotCustoms: this.num(d, d.customsValue), vTotDuty: this.num(d, d.duty), vTotVat: this.num(d, d.vat),
+      reconOk: d.customsValue === d.lines.reduce((s, l) => s + l.customs, 0) && d.duty === d.lines.reduce((s, l) => s + l.dutyAmt, 0) && d.vat === d.lines.reduce((s, l) => s + l.vatAmt, 0),
+      reconBad: !(d.customsValue === d.lines.reduce((s, l) => s + l.customs, 0) && d.duty === d.lines.reduce((s, l) => s + l.dutyAmt, 0) && d.vat === d.lines.reduce((s, l) => s + l.vatAmt, 0)),
+      aIncluded: 'Yes — received from the ' + d.countryName + ' customs filing',
+      aReceived: d.assure.received, aProcessed: d.assure.processed, aUpdated: d.assure.updated,
+      aStale: !d.assure.updated.startsWith('2026-08-26'),
+      aUpdCss: d.assure.updated.startsWith('2026-08-26') ? '' : 'color:#9A5B00;font-weight:600;',
+      aVerOk: d.assure.verification === 'Verified', aVerWarn: d.assure.verification !== 'Verified',
+      aClean: d.assure.missing.length === 0 && d.assure.verification === 'Verified',
+    };
+  }
+  renderVals() {
+    const S = this.state, P = this.props;
+    const demo = P.demoState ?? 'normal';
+    const H = {
+      nav: this.nav, setF: this.setF, setQ: this.setQ, resetAll: this.resetAll, chipX: this.chipX,
+      sortBy: this.sortBy, pgPrev: this.pgPrev, pgNext: this.pgNext, openDecl: this.openDecl, backToReg: this.backToReg,
+      setTab: this.setTab, viewAvail: this.viewAvail, toggleLine: this.toggleLine, copyMrn: this.copyMrn,
+      exportDecl: this.exportDecl, exportReg: this.exportReg, exportCancel: this.exportCancel, exportConfirm: this.exportConfirm,
+      mToggleInc: this.mToggleInc, mFmt: this.mFmt, userToggle: this.userToggle, closePops: this.closePops, protoOnly: this.protoOnly,
+      scopeToggle: this.scopeToggle, tipShow: this.tipShow, tipHide: this.tipHide, retry: this.retry,
+      f: S.f, rf: S.rf, tip: S.tip, toast: S.toast, modal: S.modal, userOpen: S.userOpen,
+      refreshed: '26 Aug 2026, 06:15 UTC',
+    };
+    if (demo === 'error' || S.err) return { ...H, err: true, loading: false, ready: false };
+    if (demo === 'loading' || !S.ready) return { ...H, err: false, loading: true, ready: false };
+    const D = this.D;
+    const actCss = 'background:#E7EEF5;color:#174A73;font-weight:600;';
+    const tabAct = 'color:#174A73;border-bottom:2px solid #1E5A8A;font-weight:600;margin-bottom:-1px;';
+    const tabIn = 'color:#5F6368;border-bottom:2px solid transparent;margin-bottom:-1px;';
+    const cap = t => ({ import: 'Import', export: 'Export', transit: 'Transit' }[t]);
+    const CNAME = c => D.CNAMES[c] || c;
+    const rl = this.reg();
+    const sk = S.sort.k, sd = S.sort.d;
+    const key = d => sk === 'date' ? d.date : sk === 'val' ? d.customsValue * d.fx : sk === 'duty' ? d.duty * d.fx : d.vat * d.fx;
+    rl.sort((a, b) => { const ka = key(a), kb = key(b); return ka < kb ? -sd : ka > kb ? sd : 0; });
+    const PP = 15, pages = Math.max(1, Math.ceil(rl.length / PP)), page = Math.min(S.page, pages);
+    const regRows = rl.slice((page - 1) * PP, page * PP).map(d => ({
+      id: d.id, status: d.status, dot: this.dot(d.status), mrn: d.mrn, ref: d.ref,
+      date: this.fd(d.release || d.date), country: d.countryName, type: cap(d.type),
+      importer: d.importer.name, exporter: d.exporter.name, origin: d.origin, dest: d.dest,
+      val: this.val(d, d.customsValue), duty: this.val(d, d.duty), vat: this.val(d, d.vat),
+    }));
+    const arrow = k => S.sort.k === k ? (S.sort.d === -1 ? ' ↓' : ' ↑') : '';
+    const sumE = fn => rl.reduce((s, x) => s + fn(x) * x.fx, 0);
+    const tCnt = t => rl.filter(x => x.type === t).length;
+    const await_ = rl.filter(x => x.status === 'Awaiting release').length;
+    const gaps = rl.filter(x => x.assure.missing.length > 0 || x.assure.verification !== 'Verified').length;
+    const chips = [];
+    if (S.f.country !== 'all') chips.push({ k: 'country', label: 'Country: ' + CNAME(S.f.country) });
+    if (S.f.type !== 'all') chips.push({ k: 'type', label: 'Type: ' + cap(S.f.type) });
+    if (S.f.status !== 'all') chips.push({ k: 'status', label: 'Status: ' + S.f.status });
+    if (S.f.entity !== 'all') chips.push({ k: 'entity', label: 'Entity: ' + S.f.entity });
+    if (S.rf.q) chips.push({ k: 'q', label: 'Search: ' + S.rf.q });
+    if (S.rf.gaps) chips.push({ k: 'gaps', label: 'With data gaps' });
+    const scr = S.screen;
+    const ph = { 'ph-overview': ['Overview', 'A consolidated view of declaration volumes and values across countries is planned once the launch dataset is validated in production.'], 'ph-exceptions': ['Exceptions', 'A worklist of declarations requiring investigation is planned for a later release.'], 'ph-reports': ['Reports', 'Scheduled and on-demand reporting is planned for a later release. Until then, use Export on the declaration register.'] }[scr];
+    const sel = scr === 'detail' ? D.DECLS.find(x => x.id === S.selId) : null;
+    let d = {}, glines = [], vLines = [], docs = [], aMissing = [];
+    if (sel) {
+      d = this.dv(sel);
+      glines = sel.lines.map(l => {
+        const c = this.chipVal(l.netKg);
+        return {
+          no: l.no, code: l.code, desc: l.desc, origin: l.origin, proc: l.proc,
+          pref: l.pref === '§na' ? '—' : l.pref,
+          gross: l.grossKg.toLocaleString('en-GB'),
+          netNp: !c.plain, netOk: c.plain, net: c.plain ? l.netKg.toLocaleString('en-GB') : '',
+          qty: l.qty.toLocaleString('en-GB'),
+          item: this.num(sel, l.item), customs: this.num(sel, l.customs),
+          dRate: l.dutyRate === null ? '—' : l.dutyRate === 0 ? 'Free' : l.dutyRate + '%',
+          duty: l.dutyAmt ? this.num(sel, l.dutyAmt) : '—',
+          vRate: l.vatRate ? l.vatRate + '%' : '—', vat: l.vatAmt ? this.num(sel, l.vatAmt) : '—',
+          exp: !!S.exp[l.no], caret: S.exp[l.no] ? '▾' : '▸',
+          xf: [
+            { k: 'Article / SKU', ...this.chipVal(l.sku) },
+            { k: 'Packaging type', ...this.chipVal(l.packaging) },
+            { k: 'Package quantity', ...this.chipVal(l.pkgQty.toLocaleString('en-GB')) },
+            { k: 'Supplementary units', ...this.chipVal(l.suppUnits) },
+            { k: 'Quota reference', ...this.chipVal(l.quota) },
+            { k: 'Transport equipment', ...this.chipVal(sel.container === '§na' ? '§na' : sel.container) },
+            { k: 'Additional reference', ...this.chipVal(l.addRef) },
+            { k: 'Transport costs', ...this.chipVal(this.num(sel, l.transport)) },
+            { k: 'Insurance costs', ...this.chipVal(this.num(sel, l.ins)) },
+            { k: 'Excise', ...this.chipVal(l.excise) },
+          ],
+        };
+      });
+      vLines = sel.lines.map(l => ({
+        no: l.no, desc: l.desc, item: this.num(sel, l.item), customs: this.num(sel, l.customs),
+        dRate: l.dutyRate === null ? '—' : l.dutyRate === 0 ? 'Free' : l.dutyRate + '%',
+        duty: l.dutyAmt ? this.num(sel, l.dutyAmt) : '—',
+        vRate: l.vatRate ? l.vatRate + '%' : '—', vat: l.vatAmt ? this.num(sel, l.vatAmt) : '—',
+      }));
+      docs = [
+        { name: 'Commercial invoice ' + sel.lines[0].addRef, note: 'Reference only' },
+        { name: 'Packing list PL-' + (2600 + sel.id), note: 'Reference only' },
+        { name: 'Transport document TD-' + (5100 + sel.id), note: 'Reference only' },
+      ];
+      aMissing = sel.assure.missing.map(m => ({ field: m.field, impact: m.impact }));
+    }
+    // export modal summary
+    let mEntity = '', mRange = '', mCountries = '', mTypes = '', mCount = '', mNote = '', mBtn = '';
+    if (S.modal) {
+      if (S.modal.kind === 'decl' && sel) {
+        mEntity = sel.entity; mRange = this.fd(sel.date); mCountries = sel.countryName; mTypes = cap(sel.type); mCount = '1';
+      } else {
+        mEntity = S.f.entity === 'all' ? 'Nordheim Consumer Group — all entities' : S.f.entity;
+        mRange = this.rangeLbl();
+        mCountries = S.f.country === 'all' ? 'All 8 countries' : CNAME(S.f.country);
+        mTypes = S.f.type === 'all' ? 'Import, export and transit' : cap(S.f.type);
+        mCount = rl.length.toLocaleString('en-GB');
+      }
+      mNote = S.mInc
+        ? 'The file contains one “Declaration” row per declaration and one “Goods line” row per line. Declaration totals appear only on declaration rows, so totals are not counted twice.'
+        : 'The file contains one row per declaration with declaration-level totals only.';
+      mBtn = 'Export ' + (S.mFmtV === 'csv' ? 'CSV' : 'XLSX');
+    }
+    return {
+      ...H, err: false, loading: false, ready: true,
+      scrR: scr === 'register', scrD: scr === 'detail', scrP: !!ph,
+      phTitle: ph ? ph[0] : '', phDesc: ph ? ph[1] : '',
+      navDeCss: scr === 'register' || scr === 'detail' ? actCss : '',
+      navOvCss: scr === 'ph-overview' ? actCss : '', navExCss: scr === 'ph-exceptions' ? actCss : '', navReCss: scr === 'ph-reports' ? actCss : '',
+      scopeOpen: S.scopeOpen, scopeLbl: S.scopeOpen ? 'Hide details' : 'Details',
+      entityOpts: [...new Set(D.DECLS.map(x => x.entity))].sort(),
+      countryOpts: D.COUNTRIES.map(C => ({ v: C.c, label: C.name })),
+      statusOpts: ['Released', 'Amended', 'Under customs control', 'Awaiting release', 'In transit', 'Completed'],
+      regCount: rl.length.toLocaleString('en-GB'), chips, chipsShow: chips.length > 0,
+      sumTot: rl.length.toLocaleString('en-GB'),
+      sumSplit: tCnt('import') + ' import · ' + tCnt('export') + ' export · ' + tCnt('transit') + ' transit',
+      sumVal: this.cmp('EUR', sumE(x => x.customsValue)), sumDv: this.cmp('EUR', sumE(x => x.duty + x.vat)),
+      sumAwait: String(await_), sumAwaitOn: S.f.status === 'Awaiting release' ? 'border-color:#1E5A8A;background:#E9F0F7;' : '',
+      sumGaps: String(gaps), qAwait: this.qAwait, qGaps: this.qGaps,
+      sumGapsOn: S.rf.gaps ? 'border-color:#1E5A8A;background:#E9F0F7;' : '',
+      sumCurs: 'Across ' + [...new Set(rl.map(x => x.cur))].sort().join(', '),
+      regRows, regEmpty: rl.length === 0, regShow: rl.length > 0,
+      sortDate: arrow('date'), sortVal: arrow('val'), sortDuty: arrow('duty'), sortVat: arrow('vat'),
+      pgInfo: rl.length ? 'Showing ' + ((page - 1) * PP + 1) + '–' + Math.min(page * PP, rl.length) + ' of ' + rl.length + ' declarations' : '',
+      pgLbl: 'Page ' + page + ' of ' + pages, pgPrevDis: page <= 1, pgNextDis: page >= pages,
+      d, glines, vLines, docs, aMissing,
+      mEntity, mRange, mCountries, mTypes, mCount, mNote, mBtn,
+      mInc: S.mInc, mFmtCsv: S.mFmtV === 'csv', mFmtXlsx: S.mFmtV === 'xlsx',
+      tOv: S.tab === 'overview', tPa: S.tab === 'parties', tGo: S.tab === 'goods', tVa: S.tab === 'values', tRe: S.tab === 'references', tDa: S.tab === 'assurance',
+      tabOv: S.tab === 'overview' ? tabAct : tabIn, tabPa: S.tab === 'parties' ? tabAct : tabIn, tabGo: S.tab === 'goods' ? tabAct : tabIn,
+      tabVa: S.tab === 'values' ? tabAct : tabIn, tabRe: S.tab === 'references' ? tabAct : tabIn, tabDa: S.tab === 'assurance' ? tabAct : tabIn,
+    };
+  }
+}
+</script>
+</body>
+</html>

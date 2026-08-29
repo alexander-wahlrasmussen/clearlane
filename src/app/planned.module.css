@@ -1,0 +1,57 @@
+.wrap {
+  padding: 22px 26px;
+}
+.title {
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+.card {
+  margin-top: 16px;
+  background: var(--surface);
+  border: 1px dashed var(--border-2);
+  border-radius: var(--radius);
+  padding: 52px;
+  text-align: center;
+}
+.pill {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-2);
+  border-radius: 9px;
+  padding: 2px 9px;
+  color: var(--ink-faint);
+  margin-bottom: 10px;
+}
+.head {
+  font-size: 14px;
+  font-weight: 600;
+}
+.desc {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin: 6px auto 0;
+  max-width: 440px;
+  line-height: 1.5;
+}
+.backBtn {
+  display: inline-block;
+  margin-top: 16px;
+  height: 31px;
+  line-height: 29px;
+  padding: 0 13px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.backBtn:hover {
+  background: #f1f4f4;
+  text-decoration: none;
+  color: var(--ink);
+}
