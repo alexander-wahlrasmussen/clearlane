@@ -3,6 +3,7 @@ import type {
   DataScope,
   DeclarationFilter,
   DeclarationsClient,
+  GoodsLineRow,
   ListParams,
   Page,
   RegisterSummary,
@@ -11,8 +12,8 @@ import { hasDataGap, type Declaration } from '../domain/declaration';
 import { eurEquivalentMinor } from '../domain/money';
 import { COUNTRIES, CUSTOMER, generateDeclarations, REFRESHED_AT } from './synthetic-data';
 
-const LATENCY_MS = 250;
-const delay = <T>(v: T): Promise<T> => new Promise((r) => setTimeout(() => r(v), LATENCY_MS));
+/** Simulated network latency for local dev; tests pass 0 to skip the wait. */
+const DEFAULT_LATENCY_MS = 250;
 
 /**
  * In-memory implementation of DeclarationsClient over the synthetic dataset.
@@ -21,9 +22,16 @@ const delay = <T>(v: T): Promise<T> => new Promise((r) => setTimeout(() => r(v),
  */
 export class MockDeclarationsClient implements DeclarationsClient {
   private readonly declarations: Declaration[];
+  private readonly latencyMs: number;
 
-  constructor() {
+  constructor(options: { latencyMs?: number } = {}) {
     this.declarations = generateDeclarations().map(mapDeclaration);
+    this.latencyMs = options.latencyMs ?? DEFAULT_LATENCY_MS;
+  }
+
+  private delay<T>(value: T): Promise<T> {
+    if (this.latencyMs <= 0) return Promise.resolve(value);
+    return new Promise((resolve) => setTimeout(() => resolve(value), this.latencyMs));
   }
 
   private applyFilter(f: DeclarationFilter): Declaration[] {
@@ -41,7 +49,7 @@ export class MockDeclarationsClient implements DeclarationsClient {
   }
 
   getScope(): Promise<DataScope> {
-    return delay({
+    return this.delay({
       availableFrom: '2026-03-01',
       availableTo: '2026-08-26',
       refreshedAt: REFRESHED_AT,
@@ -74,7 +82,39 @@ export class MockDeclarationsClient implements DeclarationsClient {
       return ka < kb ? -dir : ka > kb ? dir : 0;
     });
     const start = (p.page - 1) * p.pageSize;
-    return delay({
+    return this.delay({
+      items: sorted.slice(start, start + p.pageSize),
+      total: rows.length,
+      page: p.page,
+      pageSize: p.pageSize,
+    });
+  }
+
+  listGoodsLines(p: ListParams): Promise<Page<GoodsLineRow>> {
+    const rows: GoodsLineRow[] = this.applyFilter(p.filter).flatMap((declaration) =>
+      declaration.lines.map((line) => ({ declaration, line })),
+    );
+    // Line-grain sort keys read the line's own amounts, converted at the rate
+    // declared on its parent — never a live rate (principle #2).
+    const key = (r: GoodsLineRow): string | number =>
+      p.sort === 'date'
+        ? r.declaration.clearanceDate
+        : p.sort === 'customsValue'
+          ? eurEquivalentMinor(r.line.customsValue, r.declaration.declaredFxToEur)
+          : p.sort === 'duty'
+            ? eurEquivalentMinor(r.line.dutyAmount, r.declaration.declaredFxToEur)
+            : eurEquivalentMinor(r.line.vatAmount, r.declaration.declaredFxToEur);
+    const dir = p.order === 'asc' ? 1 : -1;
+    const sorted = [...rows].sort((a, b) => {
+      const ka = key(a);
+      const kb = key(b);
+      if (ka < kb) return -dir;
+      if (ka > kb) return dir;
+      // Stable within a declaration so its lines stay in declared order.
+      return a.line.lineNo - b.line.lineNo;
+    });
+    const start = (p.page - 1) * p.pageSize;
+    return this.delay({
       items: sorted.slice(start, start + p.pageSize),
       total: rows.length,
       page: p.page,
@@ -85,7 +125,7 @@ export class MockDeclarationsClient implements DeclarationsClient {
   getRegisterSummary(f: DeclarationFilter): Promise<RegisterSummary> {
     const rows = this.applyFilter(f);
     const eur = (fn: (d: Declaration) => number) => rows.reduce((s, d) => s + fn(d), 0);
-    return delay({
+    return this.delay({
       total: rows.length,
       imports: rows.filter((d) => d.type === 'import').length,
       exports: rows.filter((d) => d.type === 'export').length,
@@ -105,10 +145,10 @@ export class MockDeclarationsClient implements DeclarationsClient {
   getDeclaration(mrn: string): Promise<Declaration> {
     const d = this.declarations.find((x) => x.mrn === mrn);
     if (!d) return Promise.reject(new Error(`Declaration ${mrn} not found`));
-    return delay(d);
+    return this.delay(d);
   }
 
   listAllDeclarations(f: DeclarationFilter): Promise<Declaration[]> {
-    return delay(this.applyFilter(f));
+    return this.delay(this.applyFilter(f));
   }
 }

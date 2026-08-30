@@ -1,5 +1,11 @@
-import { useState } from 'react';
-import { useDeclarationsClient, useDeclarationsList, useRegisterSummary, useScope } from '../../api/queries';
+import { useMemo, useState } from 'react';
+import {
+  useDeclarationsClient,
+  useDeclarationsList,
+  useGoodsLinesList,
+  useRegisterSummary,
+  useScope,
+} from '../../api/queries';
 import type { SortKey } from '../../api/declarations-client';
 import { formatCount } from '../../domain/money';
 import { typeLabel, DECLARATION_STATUSES } from '../../domain/declaration';
@@ -17,24 +23,49 @@ import {
 } from './register-state';
 import { SummaryCards } from './SummaryCards';
 import { DataScopePanel } from './DataScopePanel';
-import { DeclarationsTable, type TableSort } from './DeclarationsTable';
+import { RegisterTable, type TableSort } from './DeclarationsTable';
+import { ColumnPicker } from './ColumnPicker';
+import {
+  DEFAULT_COLUMNS,
+  GRAIN_LABEL,
+  registerColumn,
+  type Grain,
+  type RegisterColumn,
+  type RegisterRow,
+} from './columns';
 import styles from './register.module.css';
 
 const PAGE_SIZE = 15;
+const GRAINS: readonly Grain[] = ['declaration', 'line'];
 
 export function RegisterPage() {
   const [entity] = useEntityFilter();
   const [state, setState] = useState<RegisterState>(DEFAULT_REGISTER_STATE);
   const [sort, setSort] = useState<TableSort>({ key: 'date', order: 'desc' });
   const [page, setPage] = useState(1);
+  const [grain, setGrain] = useState<Grain>('declaration');
+  const [columnIds, setColumnIds] = useState<Record<Grain, string[]>>({
+    declaration: [...DEFAULT_COLUMNS.declaration],
+    line: [...DEFAULT_COLUMNS.line],
+  });
   const [exportOpen, setExportOpen] = useState(false);
   const toast = useToast();
   const client = useDeclarationsClient();
 
   const filter = toFilter(state, entity);
+  const params = { filter, sort: sort.key, order: sort.order, page, pageSize: PAGE_SIZE };
   const scope = useScope();
-  const list = useDeclarationsList({ filter, sort: sort.key, order: sort.order, page, pageSize: PAGE_SIZE });
+  const declarations = useDeclarationsList(params, grain === 'declaration');
+  const goodsLines = useGoodsLinesList(params, grain === 'line');
   const summary = useRegisterSummary(filter);
+  const list = grain === 'declaration' ? declarations : goodsLines;
+
+  // Unknown ids are dropped rather than thrown on: a saved column set must not
+  // break the register if a column is later removed from the registry.
+  const columns: RegisterColumn[] = useMemo(
+    () => columnIds[grain].map(registerColumn).filter((c): c is RegisterColumn => c !== undefined),
+    [columnIds, grain],
+  );
 
   if (scope.isPending || (list.isPending && !list.data)) return <LoadingScreen />;
   if (scope.isError || list.isError) {
@@ -53,9 +84,19 @@ export function RegisterPage() {
     setPage(1);
   };
   const chips = activeChips(state, entity);
-  const data = list.data!;
-  const pages = Math.max(1, Math.ceil(data.total / PAGE_SIZE));
+  const total = list.data?.total ?? 0;
+  const rows: RegisterRow[] =
+    grain === 'declaration'
+      ? (declarations.data?.items ?? []).map((d) => ({ declaration: d, line: null }))
+      : (goodsLines.data?.items ?? []);
+  const rowNoun = grain === 'declaration' ? 'declarations' : 'goods lines';
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const shownPage = Math.min(page, pages);
+
+  const switchGrain = (g: Grain) => {
+    setGrain(g);
+    setPage(1);
+  };
 
   const onSort = (key: SortKey) => {
     setSort((s) => ({ key, order: s.key === key && s.order === 'desc' ? 'asc' : 'desc' }));
@@ -73,7 +114,9 @@ export function RegisterPage() {
     <div className={styles.page} data-screen-label="Declarations">
       <div className={styles.titleRow}>
         <h1 className={styles.title}>Declarations</h1>
-        <div className={styles.count}>{formatCount(data.total)} declarations</div>
+        <div className={styles.count}>
+          {formatCount(total)} {rowNoun}
+        </div>
         <div className={styles.spacer} />
         <button type="button" className={styles.primaryBtn} onClick={() => setExportOpen(true)}>
           Export results
@@ -156,6 +199,33 @@ export function RegisterPage() {
             Reset
           </button>
         </div>
+        <div className={styles.viewRow}>
+          <span className={styles.viewLabel}>Show</span>
+          <div className={styles.grainToggle} role="group" aria-label="Row grain">
+            {GRAINS.map((g) => (
+              <button
+                key={g}
+                type="button"
+                className={styles.grainBtn}
+                aria-pressed={grain === g}
+                onClick={() => switchGrain(g)}
+              >
+                {GRAIN_LABEL[g]}
+              </button>
+            ))}
+          </div>
+          <span className={styles.viewHint}>
+            {grain === 'declaration'
+              ? 'One row per declaration.'
+              : 'One row per goods line, with its declaration alongside.'}
+          </span>
+          <div className={styles.spacer} />
+          <ColumnPicker
+            grain={grain}
+            selected={columnIds[grain]}
+            onChange={(ids) => setColumnIds((c) => ({ ...c, [grain]: ids }))}
+          />
+        </div>
         {chips.length > 0 && (
           <div className={styles.chipsRow}>
             <span className={styles.chipsLabel}>Active filters:</span>
@@ -185,9 +255,9 @@ export function RegisterPage() {
         )}
       </div>
 
-      {data.total === 0 ? (
+      {total === 0 ? (
         <div className={styles.empty}>
-          <div className={styles.emptyTitle}>No declarations match your filters</div>
+          <div className={styles.emptyTitle}>No {rowNoun} match your filters</div>
           <div className={styles.emptyBody}>
             Try widening the date range or removing a filter. Data begins 1 March 2026.
           </div>
@@ -197,11 +267,11 @@ export function RegisterPage() {
         </div>
       ) : (
         <div className={styles.tableCard}>
-          <DeclarationsTable rows={data.items} sort={sort} onSort={onSort} />
+          <RegisterTable rows={rows} columns={columns} sort={sort} onSort={onSort} />
           <div className={styles.pagination}>
             <div className={`${styles.pageInfo} num`}>
-              Showing {(shownPage - 1) * PAGE_SIZE + 1}–{Math.min(shownPage * PAGE_SIZE, data.total)} of{' '}
-              {data.total} declarations
+              Showing {(shownPage - 1) * PAGE_SIZE + 1}–{Math.min(shownPage * PAGE_SIZE, total)} of{' '}
+              {total} {rowNoun}
             </div>
             <div className={styles.pageControls}>
               <button
@@ -237,7 +307,7 @@ export function RegisterPage() {
             ['Date range', PERIOD_LABEL[state.period]],
             ['Countries', state.country === 'all' ? `All ${scope.data?.countries.length ?? 0} countries` : (scope.data?.countries.find((c) => c.code === state.country)?.name ?? state.country)],
             ['Declaration types', state.type === 'all' ? 'Import, export and transit' : typeLabel(state.type)],
-            ['Declarations', formatCount(data.total)],
+            ['Declarations', formatCount(summary.data.total)],
           ]}
           onCancel={() => setExportOpen(false)}
           onConfirm={doExport}

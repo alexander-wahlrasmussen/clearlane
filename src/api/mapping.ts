@@ -39,7 +39,7 @@ function parseStatus(s: string): DeclarationStatus {
   return known;
 }
 
-function mapLine(l: GoodsLineDto, currency: string): GoodsLine {
+export function mapLine(l: GoodsLineDto, currency: string): GoodsLine {
   const m = (minor: number): Money => money(minor, currency);
   return {
     lineNo: l.no,

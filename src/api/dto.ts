@@ -38,6 +38,12 @@ export interface GoodsLineDto {
   addRef: WireField<string>;
 }
 
+/** One goods line with its parent declaration (GET /declarations/lines). */
+export interface GoodsLineRowDto {
+  declaration: DeclarationDto;
+  line: GoodsLineDto;
+}
+
 export interface PartyDto {
   name: string;
   /** null = non-EU party (renders "Not applicable — non-EU party"). */

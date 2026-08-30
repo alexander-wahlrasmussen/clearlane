@@ -19,6 +19,7 @@ export const queryKeys = {
   list: (p: ListParams) => ['declarations', p] as const,
   summary: (f: DeclarationFilter) => ['declarations-summary', f] as const,
   declaration: (mrn: string) => ['declaration', mrn] as const,
+  lines: (p: ListParams) => ['goods-lines', p] as const,
   all: (f: DeclarationFilter) => ['declarations-all', f] as const,
 };
 
@@ -27,12 +28,23 @@ export function useScope() {
   return useQuery({ queryKey: queryKeys.scope, queryFn: () => client.getScope(), staleTime: Infinity });
 }
 
-export function useDeclarationsList(params: ListParams) {
+export function useDeclarationsList(params: ListParams, enabled = true) {
   const client = useDeclarationsClient();
   return useQuery({
     queryKey: queryKeys.list(params),
     queryFn: () => client.listDeclarations(params),
     placeholderData: keepPreviousData,
+    enabled,
+  });
+}
+
+export function useGoodsLinesList(params: ListParams, enabled = true) {
+  const client = useDeclarationsClient();
+  return useQuery({
+    queryKey: queryKeys.lines(params),
+    queryFn: () => client.listGoodsLines(params),
+    placeholderData: keepPreviousData,
+    enabled,
   });
 }
 

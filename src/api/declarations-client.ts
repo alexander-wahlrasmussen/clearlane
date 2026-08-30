@@ -1,4 +1,4 @@
-import type { Declaration, DeclarationStatus, DeclarationType } from '../domain/declaration';
+import type { Declaration, DeclarationStatus, DeclarationType, GoodsLine } from '../domain/declaration';
 
 /**
  * The single seam between the UI and the backend. Everything the product reads
@@ -63,11 +63,23 @@ export interface DataScope {
   limitations: string[];
 }
 
+/**
+ * One goods line with its parent declaration, for the register's goods-line
+ * grain. Paginated by line, not by declaration — a declaration's lines can span
+ * two pages, so the header context travels with each row.
+ */
+export interface GoodsLineRow {
+  declaration: Declaration;
+  line: GoodsLine;
+}
+
 export interface DeclarationsClient {
   getScope(): Promise<DataScope>;
   listDeclarations(params: ListParams): Promise<Page<Declaration>>;
   getRegisterSummary(filter: DeclarationFilter): Promise<RegisterSummary>;
   getDeclaration(mrn: string): Promise<Declaration>;
+  /** Goods-line grain of the same filtered set. */
+  listGoodsLines(params: ListParams): Promise<Page<GoodsLineRow>>;
   /** Full filtered set — used by export and the mock ask engine. */
   listAllDeclarations(filter: DeclarationFilter): Promise<Declaration[]>;
 }

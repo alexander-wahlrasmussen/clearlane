@@ -1,11 +1,12 @@
 import type { AuthProvider } from '../auth/auth-provider';
 import { API_SCOPES } from '../auth/auth-provider';
-import { mapDeclaration } from './mapping';
-import type { DeclarationDto } from './dto';
+import { mapDeclaration, mapLine } from './mapping';
+import type { DeclarationDto, GoodsLineRowDto } from './dto';
 import type {
   DataScope,
   DeclarationFilter,
   DeclarationsClient,
+  GoodsLineRow,
   ListParams,
   Page,
   RegisterSummary,
@@ -71,6 +72,23 @@ export class HttpDeclarationsClient implements DeclarationsClient {
       pageSize: p.pageSize,
     });
     return { ...page, items: page.items.map(mapDeclaration) };
+  }
+
+  async listGoodsLines(p: ListParams): Promise<Page<GoodsLineRow>> {
+    const page = await this.get<Page<GoodsLineRowDto>>('declarations/lines', {
+      ...HttpDeclarationsClient.filterQuery(p.filter),
+      sort: p.sort,
+      order: p.order,
+      page: p.page,
+      pageSize: p.pageSize,
+    });
+    return {
+      ...page,
+      items: page.items.map((r) => ({
+        declaration: mapDeclaration(r.declaration),
+        line: mapLine(r.line, r.declaration.cur),
+      })),
+    };
   }
 
   getRegisterSummary(f: DeclarationFilter): Promise<RegisterSummary> {

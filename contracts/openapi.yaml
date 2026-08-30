@@ -51,6 +51,43 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/DeclarationPage' }
+  /declarations/lines:
+    get:
+      summary: Goods lines of the filtered declarations, paginated by line
+      description: >
+        The register's goods-line grain. Paginated by line rather than by
+        declaration, so a declaration's lines can span two pages and each row
+        carries its parent header. A production implementation should send a
+        flattened projection rather than repeating the full declaration on every
+        row; the shape here mirrors the client types.
+      security: [{ entraExternalId: [] }]
+      parameters:
+        - { in: query, name: entity, schema: { type: string } }
+        - { in: query, name: country, schema: { type: string } }
+        - { in: query, name: type, schema: { type: string, enum: [import, export, transit] } }
+        - { in: query, name: status, schema: { type: string } }
+        - { in: query, name: from, schema: { type: string, format: date } }
+        - { in: query, name: search, schema: { type: string } }
+        - { in: query, name: withGapsOnly, schema: { type: boolean } }
+        - { in: query, name: sort, schema: { type: string, enum: [date, customsValue, duty, vat] } }
+        - { in: query, name: order, schema: { type: string, enum: [asc, desc] } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1 } }
+        - { in: query, name: pageSize, schema: { type: integer, minimum: 1, maximum: 500 } }
+      responses:
+        '200':
+          description: One page of goods lines
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/GoodsLineRow' }
+                  total: { type: integer }
+                  page: { type: integer }
+                  pageSize: { type: integer }
+
   /declarations/summary:
     get:
       summary: Aggregates over the full filtered set (register summary cards)
@@ -201,6 +238,13 @@ components:
         quota: { $ref: '#/components/schemas/WireString' }
         exciseMinor: { $ref: '#/components/schemas/WireNumber' }
         addRef: { $ref: '#/components/schemas/WireString' }
+    GoodsLineRow:
+      type: object
+      description: One goods line with its parent declaration (GoodsLineRowDto)
+      properties:
+        declaration: { $ref: '#/components/schemas/Declaration' }
+        line: { $ref: '#/components/schemas/GoodsLine' }
+
     Declaration:
       type: object
       description: Field-by-field shape matches src/api/dto.ts (DeclarationDto)
