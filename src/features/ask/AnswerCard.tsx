@@ -192,20 +192,30 @@ export function AnswerCard(props: { card: AskCard; decls: Declaration[]; asOf: s
                   <div className={styles.subline}>{answer.subline}</div>
                   {answer.rows.length > 1 && (
                     <>
-                      <div className={styles.rowsTitle}>{answer.rowsTitle}</div>
-                      <div className={styles.rows}>
-                        {answer.rows.map((r) => (
-                          <div key={r.label} className={styles.row}>
-                            <div className={styles.rowLabel} title={r.label}>{r.label}</div>
-                            <div className={styles.bar}>
-                              <div className={styles.barFill} style={{ width: `${r.widthPct}%` }} />
-                            </div>
-                            <div className={`${styles.rowValue} num`}>
-                              {r.valueLabel} <span className={styles.rowShare}>{r.shareLabel}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                      <table className={styles.breakdown}>
+                        <caption className={styles.breakdownCaption}>{answer.rowsTitle}</caption>
+                        <tbody>
+                          {answer.rows.map((r) => (
+                            <tr key={r.label}>
+                              <th scope="row" className={styles.rowLabel} title={r.label}>
+                                {r.label}
+                              </th>
+                              <td className={styles.barCell}>
+                                {/* Decorative: the value it depicts is in the cell beside it. */}
+                                <div className={styles.bar} aria-hidden="true">
+                                  {r.widthPct > 0 && (
+                                    <div className={styles.barFill} style={{ width: `${r.widthPct}%` }} />
+                                  )}
+                                </div>
+                              </td>
+                              <td className={`${styles.rowValue} num`}>
+                                {r.valueLabel} <span className={styles.rowShare}>{r.shareLabel}</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {answer.rowsNote && <div className={styles.rowsNote}>{answer.rowsNote}</div>}
                     </>
                   )}
                 </>
@@ -218,27 +228,19 @@ export function AnswerCard(props: { card: AskCard; decls: Declaration[]; asOf: s
                     <div key={side.label}>
                       <div className={styles.cmpLabel}>{side.label}</div>
                       <div className={`${styles.cmpValue} num`}>{side.valueLabel}</div>
-                      <div className={styles.bar} style={{ marginTop: 8 }}>
-                        <div
-                          className={i === 0 ? styles.barFill : styles.barFillDark}
-                          style={{ width: `${side.widthPct}%` }}
-                        />
+                      <div className={styles.bar} style={{ marginTop: 8 }} aria-hidden="true">
+                        {side.widthPct > 0 && (
+                          <div
+                            className={i === 0 ? styles.barFill : styles.barFillCompare}
+                            style={{ width: `${side.widthPct}%` }}
+                          />
+                        )}
                       </div>
                       <div className={styles.cmpSub}>{side.subline}</div>
                     </div>
                   ))}
                 </div>
-                <div
-                  className={
-                    answer.deltaTone === 'positive'
-                      ? styles.deltaPositive
-                      : answer.deltaTone === 'negative'
-                        ? styles.deltaNegative
-                        : styles.deltaNeutral
-                  }
-                >
-                  {answer.deltaText}
-                </div>
+                <div className={styles.delta}>{answer.deltaText}</div>
               </>
             )}
 

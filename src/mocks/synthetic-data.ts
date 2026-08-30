@@ -51,6 +51,10 @@ const GOODS = [
   { code: '8501 31 00', desc: 'DC motors, output not exceeding 750 W', duty: 2.7, vpu: 34, wpu: 2.9, sku: 'MT' },
   { code: '7318 15 95', desc: 'Steel bolts and screws', duty: 3.7, vpu: 0.42, wpu: 0.03, sku: 'FX' },
   { code: '8536 69 90', desc: 'Electrical plugs and sockets', duty: 2.3, vpu: 1.85, wpu: 0.05, sku: 'EL' },
+  { code: '8544 42 90', desc: 'Insulated cable with connectors', duty: 3.3, vpu: 9.6, wpu: 0.31, sku: 'CB' },
+  { code: '6403 99 96', desc: 'Leather footwear, rubber outer soles', duty: 8, vpu: 28, wpu: 0.62, sku: 'FW' },
+  { code: '3926 90 97', desc: 'Plastic articles, not elsewhere specified', duty: 6.5, vpu: 3.2, wpu: 0.14, sku: 'PL' },
+  { code: '7013 49 99', desc: 'Glassware for table or kitchen use', duty: 11, vpu: 2.4, wpu: 0.42, sku: 'GW' },
 ];
 const SUPPLIERS: [string, string][] = [
   ['Brightwave Electronics Co', 'CN'], ['Hanoi Garment JSC', 'VN'], ['Anatolia Textile AS', 'TR'],

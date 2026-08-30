@@ -24,6 +24,15 @@
   --negative: #b3261e;
   --negative-bg: #fbeae9;
 
+  /* Chart marks. The product has exactly two data-bearing fills: one series
+     (breakdown bars) and the baseline/comparand pair on a compare card. Both
+     sit on --chart-track, a lighter step of the same accent ramp.
+     Checked with the dataviz validator: adjacent CVD ΔE 20.1 (deutan),
+     19.6 (tritan); every fill ≥3:1 against both the surface and the track. */
+  --chart-track: var(--accent-tint);
+  --chart-bar: #5b8ab5;
+  --chart-bar-compare: #274f74;
+
   --font-ui: 'Instrument Sans', system-ui, sans-serif;
   --font-mono: 'Spline Sans Mono', monospace;
   --radius: 6px;

@@ -33,7 +33,10 @@ export function buildReportSections(cards: AskCard[], decls: Declaration[], asOf
           .join(', ');
         return {
           title: c.question,
-          text: `${METRIC_LABEL[i.metric]} for ${scope}, ${PERIODS[i.period].label}: ${answer.headline}, computed from ${answer.count} declarations. EUR equivalents use the conversion rate declared on each declaration.`,
+          text:
+            `${METRIC_LABEL[i.metric]} for ${scope}, ${PERIODS[i.period].label}: ${answer.headline}, computed from ${answer.count} declarations. EUR equivalents use the conversion rate declared on each declaration.` +
+            // The report table is the same capped set of rows, so it carries the same denominator.
+            (answer.rowsNote ? ` ${answer.rowsNote}` : ''),
           rows: answer.rows.map((r) => ({ label: r.label, value: r.valueLabel })),
         };
       }

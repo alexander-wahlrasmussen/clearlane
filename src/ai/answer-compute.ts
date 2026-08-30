@@ -7,6 +7,7 @@ import {
   PERIODS,
   type AggregateInterpretation,
   type CompareInterpretation,
+  type Grouping,
   type Interpretation,
   type ListInterpretation,
   type ListKind,
@@ -32,6 +33,8 @@ export interface AggregateAnswer {
   count: number;
   rows: BreakdownRow[];
   rowsTitle: string;
+  /** States the denominator when the breakdown is capped; null when every group is shown. */
+  rowsNote: string | null;
   note: string;
   evidenceMrns: string[];
 }
@@ -49,7 +52,6 @@ export interface CompareAnswer {
   a: CompareSide;
   b: CompareSide;
   deltaText: string;
-  deltaTone: 'positive' | 'negative' | 'neutral';
   count: number;
   note: string;
   evidenceMrns: string[];
@@ -84,6 +86,16 @@ function lineMetricEurMinor(l: GoodsLine, d: Declaration, m: Metric): number {
   if (m === 'dutyvat') return eurEquivalentMinor(l.dutyAmount, fx) + eurEquivalentMinor(l.vatAmount, fx);
   return eurEquivalentMinor(l.customsValue, fx);
 }
+
+/** Size-ranked breakdowns are capped at this many rows; the remainder is then stated. */
+const BREAKDOWN_LIMIT = 10;
+
+const GROUP_NOUN: Record<Exclude<Grouping, 'none'>, string> = {
+  country: 'countries',
+  month: 'months',
+  commodity: 'commodities',
+  type: 'declaration types',
+};
 
 function effectiveGrouping(i: AggregateInterpretation): Exclude<AggregateInterpretation['grouping'], 'none'> {
   if (i.grouping !== 'none') return i.grouping;
@@ -123,18 +135,31 @@ export function computeAggregate(i: AggregateInterpretation, decls: Declaration[
     }
   }
 
-  let entries = [...groups.entries()];
+  const entries = [...groups.entries()];
   if (grp === 'month') entries.sort((a, b) => a[0].localeCompare(b[0]));
   else entries.sort((a, b) => b[1] - a[1]);
-  entries = entries.slice(0, 10);
-  const max = Math.max(1, ...entries.map(([, v]) => v));
+  // A month breakdown is a time axis — every month in the period is shown, in order.
+  // Size-ranked breakdowns are capped, and what the cap left out is stated below them,
+  // so the rows always reconcile to the headline total (principles #3 and #4).
+  const shown = grp === 'month' ? entries : entries.slice(0, BREAKDOWN_LIMIT);
+  const omitted = entries.slice(shown.length);
+  const max = Math.max(1, ...shown.map(([, v]) => v));
   const fmt = (v: number) => (i.metric === 'count' ? formatCount(Math.round(v)) : formatEurMinor(v));
-  const rows: BreakdownRow[] = entries.map(([k, v]) => ({
+  const rows: BreakdownRow[] = shown.map(([k, v]) => ({
     label: grp === 'month' ? `${monthLabel(k)} 2026` : grp === 'type' ? typeLabel(k as Declaration['type']) : k,
     valueLabel: fmt(v),
-    widthPct: Math.round((v / max) * 100),
+    // Deliberately not rounded: a small but real value must not become a zero-width mark.
+    widthPct: (v / max) * 100,
     shareLabel: total > 0 ? `· ${Math.round((v / total) * 100)}%` : '',
   }));
+  const omittedTotal = omitted.reduce((s, [, v]) => s + v, 0);
+  const rowsNote =
+    omitted.length === 0
+      ? null
+      : `Showing the ${shown.length} largest of ${entries.length} ${GROUP_NOUN[grp]}. The remaining ` +
+        `${omitted.length} account for ${fmt(omittedTotal)}` +
+        (total > 0 ? ` (${Math.round((omittedTotal / total) * 100)}%)` : '') +
+        ' and are included in the total above.';
 
   return {
     kind: 'aggregate',
@@ -146,6 +171,7 @@ export function computeAggregate(i: AggregateInterpretation, decls: Declaration[
     count: mrns.length,
     rows,
     rowsTitle: `Breakdown by ${grp === 'month' ? 'month' : grp} (computed)`,
+    rowsNote,
     note: i.metric === 'count' ? 'Counts are exact — no conversion applied' : EUR_NOTE,
     evidenceMrns: mrns,
   };
@@ -196,12 +222,12 @@ export function computeCompare(i: CompareInterpretation, decls: Declaration[]): 
   const fmt = (v: number) =>
     i.base.metric === 'count' ? `${formatCount(Math.round(v))} declarations` : formatEurMinor(v);
 
+  // The delta carries no direction of merit — a larger customs value or duty bill is
+  // neither good nor bad — so it is stated, never coloured or judged (principle #5).
   let deltaText: string;
-  let deltaTone: CompareAnswer['deltaTone'] = 'neutral';
   if (ra.totalEurMinor > 0) {
     const pct = ((rb.totalEurMinor - ra.totalEurMinor) / ra.totalEurMinor) * 100;
-    deltaText = `${label(i.b)} is ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% vs ${label(i.a)} (${METRIC_LABEL[i.base.metric]}, EUR equivalent)`;
-    deltaTone = pct >= 0 ? 'positive' : 'negative';
+    deltaText = `${label(i.b)} vs ${label(i.a)}: ${pct >= 0 ? '+' : ''}${pct.toFixed(1)}% (${METRIC_LABEL[i.base.metric]}, EUR equivalent)`;
   } else {
     deltaText = `No ${METRIC_LABEL[i.base.metric].toLowerCase()} in ${label(i.a)} — comparison shown as absolute values.`;
   }
@@ -209,10 +235,9 @@ export function computeCompare(i: CompareInterpretation, decls: Declaration[]): 
   return {
     kind: 'compare',
     interpText: `Comparing ${METRIC_LABEL[i.base.metric].toLowerCase()}: ${label(i.a)} vs ${label(i.b)}`,
-    a: { label: label(i.a), valueLabel: fmt(ra.totalEurMinor), widthPct: Math.round((ra.totalEurMinor / max) * 100), subline: `${ra.n} declarations` },
-    b: { label: label(i.b), valueLabel: fmt(rb.totalEurMinor), widthPct: Math.round((rb.totalEurMinor / max) * 100), subline: `${rb.n} declarations` },
+    a: { label: label(i.a), valueLabel: fmt(ra.totalEurMinor), widthPct: (ra.totalEurMinor / max) * 100, subline: `${ra.n} declarations` },
+    b: { label: label(i.b), valueLabel: fmt(rb.totalEurMinor), widthPct: (rb.totalEurMinor / max) * 100, subline: `${rb.n} declarations` },
     deltaText,
-    deltaTone,
     count: ra.n + rb.n,
     note: EUR_NOTE,
     evidenceMrns: [...ra.mrns, ...rb.mrns],
