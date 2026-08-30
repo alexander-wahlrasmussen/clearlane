@@ -69,6 +69,17 @@ list. Editing interpretation chips recomputes without a model call
    `Storage` as a parameter. In production they belong with the user's account
    behind the API; the read path already drops any stored view this build does
    not recognise, so a schema change cannot break the register.
+6. **The AI surface is the MVP with Reports replaced by Ask.** The register
+   (`features/register/RegisterPage.tsx`) and the declaration view
+   (`features/declaration/DeclarationDetail.tsx`) are one component each,
+   hosted by both shells; the legal-entity selection sits above both
+   (`app/entity-context.tsx`). What Ask replaces is the *way in* to a report:
+   a saved view is an `extract` interpretation (`ai/ask-types.ts`) — the
+   same rows, columns, filters and export — opened by asking for it, and the
+   five reports the data cannot produce (`domain/reports-not-offered.ts`) are
+   answered with their reason. Nothing else from the MVP is re-implemented on
+   the AI side, and the AI side never sends the user to the MVP for "the full
+   view".
 
 ## Invariants the code enforces
 

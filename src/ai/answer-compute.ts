@@ -7,8 +7,8 @@ import {
   PERIODS,
   type AggregateInterpretation,
   type CompareInterpretation,
+  type ComputedInterpretation,
   type Grouping,
-  type Interpretation,
   type ListInterpretation,
   type ListKind,
   type Metric,
@@ -292,7 +292,7 @@ export function computeList(i: ListInterpretation, decls: Declaration[], asOf: s
   };
 }
 
-export function computeAnswer(i: Interpretation, decls: Declaration[], asOf: string): Answer {
+export function computeAnswer(i: ComputedInterpretation, decls: Declaration[], asOf: string): Answer {
   if (i.kind === 'aggregate') return computeAggregate(i, decls);
   if (i.kind === 'compare') return computeCompare(i, decls);
   return computeList(i, decls, asOf);

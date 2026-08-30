@@ -40,3 +40,50 @@ describe('interpretQuestion', () => {
     expect(r.confidence.low).toBe(true);
   });
 });
+
+describe('interpretQuestion — reports', () => {
+  it('opens a built-in report by name as an extract, with the question’s filters', () => {
+    const r = interpretQuestion('Declaration line overview for Germany this month');
+    expect(r.interpretation).toMatchObject({
+      kind: 'extract',
+      reportId: 'declaration-line-overview',
+      view: { grain: 'line', filter: { country: 'DE', period: '1m' } },
+    });
+    expect(r.confidence.low).toBe(false);
+  });
+
+  it('treats a request for rows as an extract from the Declaration Summary', () => {
+    const r = interpretQuestion('Show released import declarations in Sweden');
+    expect(r.interpretation).toMatchObject({
+      kind: 'extract',
+      reportId: 'declaration-summary',
+      view: { grain: 'declaration', filter: { country: 'SE', type: 'import', status: 'Released' } },
+    });
+  });
+
+  it('says so when the register’s date ranges are wider than the period asked for', () => {
+    const r = interpretQuestion('Declaration summary for Q2');
+    expect(r.interpretation).toMatchObject({ kind: 'extract', view: { filter: { period: '6m' } } });
+    expect(r.confidence.low).toBe(true);
+    expect(r.confidence.message).toMatch(/date ranges/);
+  });
+
+  it('keeps data-quality lists as lists even when phrased as a request for rows', () => {
+    expect(interpretQuestion('List declarations with data gaps').interpretation).toMatchObject({
+      kind: 'list',
+      list: 'gaps',
+    });
+  });
+
+  it('answers a request for a report the data cannot produce with the reason, not an approximation', () => {
+    expect(interpretQuestion('VAT report for Q2').interpretation).toEqual({ kind: 'unsupported', report: 'vat' });
+    expect(interpretQuestion('Can I get the Intrastat return?').interpretation).toEqual({ kind: 'unsupported', report: 'intrastat' });
+    expect(interpretQuestion('EC sales list for July').interpretation).toEqual({ kind: 'unsupported', report: 'ec-sales' });
+    expect(interpretQuestion('manifest discrepancy report').interpretation).toEqual({ kind: 'unsupported', report: 'mdr' });
+    expect(interpretQuestion('MCD report').interpretation).toEqual({ kind: 'unsupported', report: 'mcd' });
+  });
+
+  it('does not mistake a VAT figure for a VAT report', () => {
+    expect(interpretQuestion('Monthly VAT trend for imports').interpretation).toMatchObject({ kind: 'aggregate', metric: 'vat' });
+  });
+});

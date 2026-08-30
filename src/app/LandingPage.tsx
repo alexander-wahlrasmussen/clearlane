@@ -47,9 +47,11 @@ export function LandingPage() {
             <div className={styles.cardKicker}>Surface 2 · exploratory</div>
             <div className={styles.cardTitle}>AI concept</div>
             <p className={styles.cardBody}>
-              Ask a question in plain language and get an answer computed from the same data, with the
-              exact declarations it came from. In this build the interpreter is a deterministic
-              stand-in rather than a language model, so stay close to the suggested questions.
+              The MVP's register and declaration view, with the Reports page replaced by asking. Ask a
+              question in plain language and get an answer computed from the same data, with the exact
+              declarations it came from; ask for a report by name and get its rows, columns and
+              export. In this build the interpreter is a deterministic stand-in rather than a language
+              model, so stay close to the suggested questions.
             </p>
             <span className={styles.cardCta}>Open the AI concept →</span>
           </Link>
@@ -76,7 +78,8 @@ export function LandingPage() {
           </li>
           <li>
             <strong>The Ask surface.</strong> Is a question-first way of working credible for this team,
-            given every answer must link to its evidence?
+            given every answer must link to its evidence? Does asking for a report replace choosing one
+            from a list, or do you want both?
           </li>
         </ol>
 

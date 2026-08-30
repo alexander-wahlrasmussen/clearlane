@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { DEFAULT_REGISTER_STATE, type RegisterState } from './register-state';
 import type { RegisterView } from './views';
 
@@ -96,12 +96,38 @@ export function newViewId(): string {
   return `view-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/**
+ * One in-memory copy shared by every component on the page, so saving a
+ * report in one place (the register's report bar, an answer card) shows it
+ * everywhere else at once. Loaded from storage on first use.
+ */
+let cache: RegisterView[] | null = null;
+const listeners = new Set<() => void>();
+
+function read(): RegisterView[] {
+  if (cache === null) cache = loadSavedViews();
+  return cache;
+}
+
+function write(next: RegisterView[]): void {
+  cache = next;
+  persistSavedViews(next);
+  for (const l of listeners) l();
+}
+
+function subscribe(l: () => void): () => void {
+  listeners.add(l);
+  return () => listeners.delete(l);
+}
+
+/** Forgets the in-memory copy — for tests that swap the storage underneath. */
+export function resetSavedViewsCache(): void {
+  cache = null;
+}
+
 /** The user's saved reports, persisted on every change. */
 export function useSavedViews(): [RegisterView[], (next: RegisterView[]) => void] {
-  const [views, setViews] = useState<RegisterView[]>(() => loadSavedViews());
-  const update = useCallback((next: RegisterView[]) => {
-    setViews(next);
-    persistSavedViews(next);
-  }, []);
+  const views = useSyncExternalStore(subscribe, read, read);
+  const update = useCallback((next: RegisterView[]) => write(next), []);
   return [views, update];
 }

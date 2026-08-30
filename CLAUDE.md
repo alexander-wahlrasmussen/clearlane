@@ -14,9 +14,10 @@ Two product surfaces are being prototyped in parallel:
 | Surface | Route | Description |
 |---|---|---|
 | **MVP** | `/mvp` | Table-first declaration register + full declaration detail view. This is the shippable scope. |
-| **AI concept** | `/ai` | Natural-language "Ask" surface over the same data, answers with evidence drill-down and report drafting. Exploratory. |
+| **AI concept** | `/ai` | The MVP's register and declaration view, hosted unchanged, with the Reports page replaced by a natural-language "Ask" surface: answers with evidence drill-down, reports as extract answers, report drafting. Exploratory. |
 
-Both read the **same data layer**. Never fork the data model per surface.
+Both read the **same data layer**. Never fork the data model per surface — and never re-implement an
+MVP feature on the AI side: host the same component (`docs/architecture.md`, decision 6).
 
 ## Non-negotiable product principles
 

@@ -47,3 +47,40 @@ describe('interpretation guard', () => {
     expect(() => parseInterpretedQuestion(null)).toThrow(InvalidInterpretationError);
   });
 });
+
+describe('interpretation guard — extracts and unsupported reports', () => {
+  const extract: Interpretation = {
+    kind: 'extract',
+    name: 'Declaration Summary',
+    reportId: 'declaration-summary',
+    view: {
+      grain: 'declaration',
+      columns: ['status', 'mrn', 'customsValueTotal'],
+      filter: { period: '6m', country: 'all', type: 'all', status: 'all', search: '', gapsOnly: false },
+      sort: { sort: 'date', order: 'desc' },
+    },
+  };
+
+  it('accepts a well-formed extract and every known unsupported report', () => {
+    expect(interpretationProblem(extract)).toBeNull();
+    for (const report of ['vat', 'mdr', 'mcd', 'ec-sales', 'intrastat'] as const) {
+      expect(interpretationProblem({ kind: 'unsupported', report })).toBeNull();
+    }
+  });
+
+  it('rejects columns the registry does not offer at that grain — never drops them silently', () => {
+    const unknown = { ...extract, view: { ...extract.view, columns: ['mrn', 'profitMargin'] } } as Interpretation;
+    expect(interpretationProblem(unknown)).toMatch(/unknown column "profitMargin"/);
+    const wrongGrain = { ...extract, view: { ...extract.view, columns: ['mrn', 'commodityCode'] } } as Interpretation;
+    expect(interpretationProblem(wrongGrain)).toMatch(/not offered at declaration grain/);
+  });
+
+  it('rejects filters outside the register’s vocabulary', () => {
+    const period = { ...extract, view: { ...extract.view, filter: { ...extract.view.filter, period: '12m' } } } as unknown as Interpretation;
+    expect(interpretationProblem(period)).toMatch(/date range "12m"/);
+    const status = { ...extract, view: { ...extract.view, filter: { ...extract.view.filter, status: 'Lost' } } } as unknown as Interpretation;
+    expect(interpretationProblem(status)).toMatch(/status "Lost"/);
+    const report = { kind: 'unsupported', report: 'payroll' } as unknown as Interpretation;
+    expect(interpretationProblem(report)).toMatch(/unknown report "payroll"/);
+  });
+});

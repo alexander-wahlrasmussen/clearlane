@@ -3,8 +3,10 @@ import type { Declaration } from '../../domain/declaration';
 import { countryName } from '../../domain/countries';
 import { useScope } from '../../api/queries';
 import { computeAnswer } from '../../ai/answer-compute';
-import type { AggregateInterpretation, Grouping, Metric, PeriodKey } from '../../ai/ask-types';
+import { isComputed, type AggregateInterpretation, type Grouping, type Metric, type PeriodKey } from '../../ai/ask-types';
+import { notOfferedReport, type NotOfferedReportId } from '../../domain/reports-not-offered';
 import { useAskSession, type AskCard } from './ask-session';
+import { ExtractAnswer } from './ExtractAnswer';
 import styles from './ask.module.css';
 
 const PERIOD_OPTIONS: [PeriodKey, string][] = [
@@ -118,15 +120,44 @@ function InterpretationChips(props: { cardId: number; interp: AggregateInterpret
   );
 }
 
+/**
+ * The answer to a request for a report the data cannot produce is the reason,
+ * stated plainly — no figures, no evidence list, nothing to add to a draft.
+ */
+function UnsupportedAnswer(props: { report: NotOfferedReportId }) {
+  const r = notOfferedReport(props.report);
+  return (
+    <>
+      <div className={styles.interpBar}>
+        <span className={styles.interpLabel}>Understood as</span>
+        <span className={styles.interpText}>A request for {r.name}</span>
+        <span className={styles.interpSpacer} />
+        <span className={styles.cannotChip}>Cannot be produced from declaration data</span>
+      </div>
+      <div className={styles.answerBody}>
+        <div className={styles.unsupportedTitle}>This report is not offered here</div>
+        <p className={styles.unsupportedText}>{r.reason}</p>
+      </div>
+      <div className={styles.answerFoot}>
+        <span>
+          No figures were computed. The reports the declaration data does produce are Declaration
+          Summary, Declaration Line Overview and Order/Declaration status — ask for one by name.
+        </span>
+      </div>
+    </>
+  );
+}
+
 export function AnswerCard(props: { card: AskCard; decls: Declaration[]; asOf: string }) {
   const session = useAskSession();
   const { card } = props;
   const interpreted = card.interpreted;
+  const interp = interpreted?.interpretation;
   const answer = useMemo(
-    () =>
-      interpreted ? computeAnswer(interpreted.interpretation, props.decls, props.asOf) : null,
-    [interpreted, props.decls, props.asOf],
+    () => (interp && isComputed(interp) ? computeAnswer(interp, props.decls, props.asOf) : null),
+    [interp, props.decls, props.asOf],
   );
+  const unsupported = interp?.kind === 'unsupported';
 
   return (
     <div className={styles.answerCard}>
@@ -135,6 +166,8 @@ export function AnswerCard(props: { card: AskCard; decls: Declaration[]; asOf: s
         <button
           type="button"
           className={card.inReport ? styles.repBtnOn : styles.repBtn}
+          disabled={unsupported}
+          title={unsupported ? 'Nothing to add — the data cannot support this report' : undefined}
           onClick={() => session.toggleReport(card.id)}
         >
           {card.inReport ? '✓ In report' : '+ Add to report'}
@@ -160,12 +193,17 @@ export function AnswerCard(props: { card: AskCard; decls: Declaration[]; asOf: s
         </div>
       )}
 
+      {interp?.kind === 'unsupported' && <UnsupportedAnswer report={interp.report} />}
+      {interpreted && interp?.kind === 'extract' && (
+        <ExtractAnswer cardId={card.id} interp={interp} confidence={interpreted.confidence} />
+      )}
+
       {interpreted && answer && (
         <>
           <div className={styles.interpBar}>
             <span className={styles.interpLabel}>Understood as</span>
-            {interpreted.interpretation.kind === 'aggregate' ? (
-              <InterpretationChips cardId={card.id} interp={interpreted.interpretation} />
+            {interp?.kind === 'aggregate' ? (
+              <InterpretationChips cardId={card.id} interp={interp} />
             ) : (
               <span className={styles.interpText}>
                 {answer.kind !== 'aggregate' ? answer.interpText : ''}

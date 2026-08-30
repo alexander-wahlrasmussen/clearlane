@@ -53,7 +53,10 @@ e2e/                        Playwright: register→detail, ask→evidence
   HTTP (against `contracts/openapi.yaml`) and in-memory mock.
 - `src/ai/ask-engine.ts` — a model only ever turns a question into a structured
   `Interpretation`; `src/ai/answer-compute.ts` computes every number
-  deterministically and emits the complete evidence list.
+  deterministically and emits the complete evidence list. A report is an
+  `extract` interpretation — the register's own view — so the AI surface hosts
+  the MVP's register and declaration view rather than copying them
+  (`docs/architecture.md`, decision 6).
 
 ## Preview deployment (for internal review)
 

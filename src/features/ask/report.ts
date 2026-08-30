@@ -3,6 +3,9 @@ import { countryName } from '../../domain/countries';
 import { computeAnswer } from '../../ai/answer-compute';
 import { METRIC_LABEL, PERIODS } from '../../ai/ask-types';
 import { formatIsoDate } from '../../domain/dates';
+import { formatCount } from '../../domain/money';
+import { resolveColumns } from '../register/columns';
+import { describeFilter, describeGrain } from '../register/views';
 import type { AskCard } from './ask-session';
 
 export interface ReportSection {
@@ -14,16 +17,44 @@ export interface ReportSection {
 /**
  * Report narrative is generated from the computed figures only. Numbers are
  * never rephrased or rounded differently from the answer cards.
+ *
+ * An extract's section records its definition and row count — the rows
+ * themselves are a file, exported from the answer, not prose. `extractTotals`
+ * carries each extract card's row count as read from the data layer.
  */
-export function buildReportSections(cards: AskCard[], decls: Declaration[], asOf: string): ReportSection[] {
+export function buildReportSections(
+  cards: AskCard[],
+  decls: Declaration[],
+  asOf: string,
+  extractTotals: ReadonlyMap<number, number> = new Map(),
+): ReportSection[] {
   return cards
     .flatMap((c) => (c.inReport && c.interpreted ? [{ card: c, interpreted: c.interpreted }] : []))
     .reverse()
-    .map(({ card: c, interpreted }) => {
+    .flatMap(({ card: c, interpreted }) => {
       const i = interpreted.interpretation;
+      if (i.kind === 'unsupported') return [];
+      if (i.kind === 'extract') {
+        const labels = resolveColumns(i.view.columns).map((col) => col.label);
+        const total = extractTotals.get(c.id);
+        const rowNoun = i.view.grain === 'declaration' ? 'declarations' : 'goods lines';
+        return [
+          {
+            title: c.question,
+            text:
+              `${i.name} — ${describeGrain(i.view.grain).toLowerCase()} · ${describeFilter(i.view.filter)} · ` +
+              `${labels.length} columns (${labels.join(', ')}). ` +
+              (total === undefined
+                ? 'Row count not yet read. '
+                : `${formatCount(total)} ${rowNoun} as of ${formatIsoDate(asOf)}. `) +
+              'The rows are exported from the answer as CSV or Excel; this draft records the definition.',
+            rows: [],
+          },
+        ];
+      }
       const answer = computeAnswer(i, decls, asOf);
       if (answer.kind === 'aggregate' && i.kind === 'aggregate') {
-        const scope = [
+        const scope: string = [
           i.country !== 'all' ? countryName(i.country) : 'all countries',
           i.type !== 'all' ? `${i.type}s` : null,
           i.goods ? i.goods.label : null,
@@ -31,38 +62,46 @@ export function buildReportSections(cards: AskCard[], decls: Declaration[], asOf
         ]
           .filter(Boolean)
           .join(', ');
-        return {
-          title: c.question,
-          text:
-            `${METRIC_LABEL[i.metric]} for ${scope}, ${PERIODS[i.period].label}: ${answer.headline}, computed from ${answer.count} declarations. EUR equivalents use the conversion rate declared on each declaration.` +
-            // The report table is the same capped set of rows, so it carries the same denominator.
-            (answer.rowsNote ? ` ${answer.rowsNote}` : ''),
-          rows: answer.rows.map((r) => ({ label: r.label, value: r.valueLabel })),
-        };
+        return [
+          {
+            title: c.question,
+            text:
+              `${METRIC_LABEL[i.metric]} for ${scope}, ${PERIODS[i.period].label}: ${answer.headline}, computed from ${answer.count} declarations. EUR equivalents use the conversion rate declared on each declaration.` +
+              // The report table is the same capped set of rows, so it carries the same denominator.
+              (answer.rowsNote ? ` ${answer.rowsNote}` : ''),
+            rows: answer.rows.map((r) => ({ label: r.label, value: r.valueLabel })),
+          },
+        ];
       }
       if (answer.kind === 'compare') {
-        return {
-          title: c.question,
-          text: `${answer.interpText}. ${answer.a.label}: ${answer.a.valueLabel} (${answer.a.subline}); ${answer.b.label}: ${answer.b.valueLabel} (${answer.b.subline}). ${answer.deltaText}.`,
-          rows: [
-            { label: answer.a.label, value: answer.a.valueLabel },
-            { label: answer.b.label, value: answer.b.valueLabel },
-          ],
-        };
+        return [
+          {
+            title: c.question,
+            text: `${answer.interpText}. ${answer.a.label}: ${answer.a.valueLabel} (${answer.a.subline}); ${answer.b.label}: ${answer.b.valueLabel} (${answer.b.subline}). ${answer.deltaText}.`,
+            rows: [
+              { label: answer.a.label, value: answer.a.valueLabel },
+              { label: answer.b.label, value: answer.b.valueLabel },
+            ],
+          },
+        ];
       }
       if (answer.kind === 'list') {
-        return {
-          title: c.question,
-          text: `${answer.headline} as of ${formatIsoDate(asOf)}. Each declaration is listed with the reason it was flagged.`,
-          rows: answer.rows.slice(0, 6).map((r) => ({ label: `${r.mrn} · ${r.country}`, value: r.reason })),
-        };
+        return [
+          {
+            title: c.question,
+            text: `${answer.headline} as of ${formatIsoDate(asOf)}. Each declaration is listed with the reason it was flagged.`,
+            rows: answer.rows.slice(0, 6).map((r) => ({ label: `${r.mrn} · ${r.country}`, value: r.reason })),
+          },
+        ];
       }
       // computeAnswer maps interpretation kind to answer kind, so this is unreachable in practice.
-      return {
-        title: c.question,
-        text: answer.headline,
-        rows: answer.rows.map((r) => ({ label: r.label, value: r.valueLabel })),
-      };
+      return [
+        {
+          title: c.question,
+          text: answer.headline,
+          rows: answer.rows.map((r) => ({ label: r.label, value: r.valueLabel })),
+        },
+      ];
     });
 }
 

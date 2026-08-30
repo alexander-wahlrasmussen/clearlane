@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useAskEngine } from '../../ai/ask-engine-context';
 import type { Interpretation, InterpretedQuestion } from '../../ai/ask-types';
+import { extractFromView } from '../../ai/extract-view';
 import type { RegisterHandoff } from '../register/RegisterPage';
+import type { RegisterView } from '../register/views';
 
 /**
  * State for one Ask session: the answer feed, report picks, and the
@@ -25,6 +27,8 @@ export interface EvidenceSelection {
 interface AskSessionValue {
   cards: AskCard[];
   ask: (question: string) => void;
+  /** Opens a report as an answer — no model call; its interpretation is its view. */
+  askView: (view: RegisterView) => void;
   setInterpretation: (id: number, interpretation: Interpretation) => void;
   toggleReport: (id: number) => void;
   removeCard: (id: number) => void;
@@ -75,10 +79,34 @@ export function AskSessionProvider(props: { children: ReactNode }) {
     [engine, seq, patchCard],
   );
 
+  const askView = useCallback(
+    (view: RegisterView) => {
+      const id = seq;
+      setSeq((s) => s + 1);
+      setCards((cs) => [
+        {
+          id,
+          question: view.name,
+          pending: false,
+          inReport: false,
+          failed: false,
+          interpreted: {
+            question: view.name,
+            interpretation: extractFromView(view),
+            confidence: { low: false, message: '' },
+          },
+        },
+        ...cs,
+      ]);
+    },
+    [seq],
+  );
+
   const value = useMemo<AskSessionValue>(
     () => ({
       cards,
       ask,
+      askView,
       setInterpretation: (id, interpretation) =>
         setCards((cs) =>
           cs.map((c) =>
@@ -102,7 +130,7 @@ export function AskSessionProvider(props: { children: ReactNode }) {
       handoff,
       setHandoff,
     }),
-    [cards, ask, reportOpen, evidence, drawerMrn, handoff],
+    [cards, ask, askView, reportOpen, evidence, drawerMrn, handoff],
   );
 
   return <Ctx.Provider value={value}>{props.children}</Ctx.Provider>;

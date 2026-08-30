@@ -1,12 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearch } from '@tanstack/react-router';
-import {
-  useDeclarationsClient,
-  useDeclarationsList,
-  useGoodsLinesList,
-  useRegisterSummary,
-  useScope,
-} from '../../api/queries';
+import { useDeclarationsList, useGoodsLinesList, useRegisterSummary, useScope } from '../../api/queries';
 import type { ListSort, SortKey } from '../../api/declarations-client';
 import { formatCount } from '../../domain/money';
 import { typeLabel, DECLARATION_STATUSES } from '../../domain/declaration';
@@ -14,7 +8,8 @@ import { LoadingScreen, ErrorScreen } from '../../app/StatusScreens';
 import { useEntityFilter } from '../../app/entity-context';
 import { useToast } from '../../app/ToastContext';
 import { ExportDialog, EXPORT_NOTE } from '../export/ExportDialog';
-import { exportRows, fileSlug } from '../export/export-service';
+import { fileSlug } from '../export/export-service';
+import { useViewExport } from '../export/useViewExport';
 import {
   activeChips,
   DEFAULT_REGISTER_STATE,
@@ -26,6 +21,7 @@ import { SummaryCards } from './SummaryCards';
 import { DataScopePanel } from './DataScopePanel';
 import { RegisterTable } from './DeclarationsTable';
 import { ColumnPicker } from './ColumnPicker';
+import { Pagination } from './Pagination';
 import { ReportBar } from './ReportBar';
 import { DEFAULT_COLUMNS, GRAIN_LABEL, resolveColumns, type Grain, type RegisterRow } from './columns';
 import { BUILT_IN_VIEWS, findView, viewMatches, type RegisterView, type ViewConfig } from './views';
@@ -86,7 +82,7 @@ export function RegisterPage(props: RegisterPageProps) {
   });
   const [exportOpen, setExportOpen] = useState(false);
   const toast = useToast();
-  const client = useDeclarationsClient();
+  const exportView = useViewExport();
 
   const filter = { ...toFilter(state, entity), ...(handoff?.mrns ? { mrns: handoff.mrns } : {}) };
   const params = { filter, ...sort, page, pageSize: PAGE_SIZE };
@@ -166,8 +162,6 @@ export function RegisterPage(props: RegisterPageProps) {
       ? (declarations.data?.items ?? []).map((d) => ({ declaration: d, line: null }))
       : (goodsLines.data?.items ?? []);
   const rowNoun = grain === 'declaration' ? 'declarations' : 'goods lines';
-  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const shownPage = Math.min(page, pages);
 
   const current: ViewConfig = { grain, columns: columnIds[grain], filter: state, sort };
   const activeView = reportBar ? findView(allViews, activeId) : undefined;
@@ -212,20 +206,8 @@ export function RegisterPage(props: RegisterPageProps) {
         : grain === 'declaration'
           ? 'declarations-export'
           : 'goods-lines-export';
-    try {
-      const all: RegisterRow[] =
-        grain === 'declaration'
-          ? (await client.listAllDeclarations(filter, sort)).map((d) => ({ declaration: d, line: null }))
-          : await client.listAllGoodsLines(filter, sort);
-      exportRows(all, columns, { format, filename, sheetName: GRAIN_LABEL[grain] });
-    } catch (e) {
-      // The dialog stays open so the user can retry; nothing was written.
-      console.error('Export failed', e);
-      toast('Export failed — no file was downloaded. Try again.');
-      return;
-    }
-    setExportOpen(false);
-    toast('Export ready — file downloaded');
+    // On failure the dialog stays open so the user can retry; nothing was written.
+    if (await exportView({ grain, filter, sort, columns, filename, format })) setExportOpen(false);
   };
 
   return (
@@ -409,33 +391,7 @@ export function RegisterPage(props: RegisterPageProps) {
       ) : (
         <div className={styles.tableCard}>
           <RegisterTable rows={rows} columns={columns} sort={sort} onSort={onSort} onOpen={onOpenDeclaration} />
-          <div className={styles.pagination}>
-            <div className={`${styles.pageInfo} num`}>
-              Showing {(shownPage - 1) * PAGE_SIZE + 1}–{Math.min(shownPage * PAGE_SIZE, total)} of{' '}
-              {total} {rowNoun}
-            </div>
-            <div className={styles.pageControls}>
-              <button
-                type="button"
-                className={styles.pageBtn}
-                disabled={shownPage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                ← Previous
-              </button>
-              <span className={`${styles.pageInfo} num`}>
-                Page {shownPage} of {pages}
-              </span>
-              <button
-                type="button"
-                className={styles.pageBtn}
-                disabled={shownPage >= pages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                Next →
-              </button>
-            </div>
-          </div>
+          <Pagination page={page} pageSize={PAGE_SIZE} total={total} rowNoun={rowNoun} onPage={setPage} />
         </div>
       )}
 

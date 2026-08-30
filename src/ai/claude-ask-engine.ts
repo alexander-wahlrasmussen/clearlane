@@ -1,7 +1,13 @@
 import type { AuthProvider } from '../auth/auth-provider';
 import { API_SCOPES } from '../auth/auth-provider';
+import { DECLARATION_STATUSES, type DeclarationStatus, type DeclarationType } from '../domain/declaration';
+import { NOT_OFFERED_REPORT_IDS, type NotOfferedReportId } from '../domain/reports-not-offered';
+import { REGISTER_COLUMNS, type Grain } from '../features/register/columns';
+import type { PeriodOption } from '../features/register/register-state';
+import { BUILT_IN_VIEWS } from '../features/register/views';
 import type { AskEngine } from './ask-engine';
 import type { Interpretation, InterpretedQuestion } from './ask-types';
+import { composeExtract } from './extract-view';
 import { assertValidInterpretation, parseInterpretedQuestion } from './interpretation-guard';
 
 /**
@@ -31,7 +37,18 @@ Rules:
 - "value" means customs value. Comparisons ("X vs Y") must use compare with
   both sides of the same field type.
 - Questions about missing data, unreleased declarations, stale refreshes or
-  flagged records are list questions.`;
+  flagged records are list questions.
+- A request for a report, a table, rows, an extract or an export of
+  declarations or goods lines is an extract. Name the built-in report in
+  reportId when the question names one (Declaration Summary, Declaration Line
+  Overview, Order/Declaration status); otherwise leave it unset and set grain
+  ("line" when goods lines are asked for). Only set columns when the question
+  names fields explicitly. The register's date ranges are coarse (this month,
+  last 3 months, last 6 months, year to date): pick the smallest that covers
+  the period asked for and, if it is wider, set lowConfidence and say so.
+- VAT reports, MDR, MCD, EC Sales and Intrastat cannot be produced from
+  declaration data. Map them to kind "unsupported" with unsupportedReport set;
+  the product explains why. Never attempt to approximate them.`;
 
 /** Anthropic tool definition — the entire surface the model can touch. */
 export const INTERPRET_TOOL = {
@@ -40,7 +57,7 @@ export const INTERPRET_TOOL = {
   input_schema: {
     type: 'object',
     properties: {
-      kind: { type: 'string', enum: ['aggregate', 'compare', 'list'] },
+      kind: { type: 'string', enum: ['aggregate', 'compare', 'list', 'extract', 'unsupported'] },
       metric: { type: 'string', enum: ['value', 'duty', 'vat', 'dutyvat', 'count'] },
       period: {
         type: 'string',
@@ -57,6 +74,25 @@ export const INTERPRET_TOOL = {
       compareA: { type: 'string' },
       compareB: { type: 'string' },
       listKind: { type: 'string', enum: ['awaiting', 'gaps', 'stale', 'attention'] },
+      reportId: {
+        type: 'string',
+        enum: BUILT_IN_VIEWS.map((v) => v.id),
+        description: 'For extract: the built-in report the question names, if any',
+      },
+      grain: { type: 'string', enum: ['declaration', 'line'], description: 'For extract: one row per declaration or per goods line' },
+      columns: {
+        type: 'array',
+        items: { type: 'string', enum: REGISTER_COLUMNS.map((c) => c.id) },
+        description: 'For extract: only the columns the question names explicitly; omit to use the report’s or the default set',
+      },
+      registerPeriod: { type: 'string', enum: ['1m', '3m', '6m', 'ytd'], description: 'For extract: this month, last 3 months, last 6 months, year to date' },
+      status: { type: 'string', enum: [...DECLARATION_STATUSES, 'all'], description: 'For extract: a declaration status filter' },
+      gapsOnly: { type: 'boolean', description: 'For extract: only declarations with data gaps' },
+      unsupportedReport: {
+        type: 'string',
+        enum: [...NOT_OFFERED_REPORT_IDS],
+        description: 'For unsupported: which requested report the data cannot produce',
+      },
       lowConfidence: { type: 'boolean' },
       lowConfidenceMessage: { type: 'string', description: 'Plain British English; required when lowConfidence is true' },
     },
@@ -65,7 +101,7 @@ export const INTERPRET_TOOL = {
 } as const;
 
 interface ToolOutput {
-  kind: 'aggregate' | 'compare' | 'list';
+  kind: 'aggregate' | 'compare' | 'list' | 'extract' | 'unsupported';
   metric?: string;
   period?: string;
   country?: string;
@@ -78,9 +114,18 @@ interface ToolOutput {
   compareA?: string;
   compareB?: string;
   listKind?: 'awaiting' | 'gaps' | 'stale' | 'attention';
+  reportId?: string;
+  grain?: Grain;
+  columns?: string[];
+  registerPeriod?: PeriodOption;
+  status?: DeclarationStatus | 'all';
+  gapsOnly?: boolean;
+  unsupportedReport?: NotOfferedReportId;
   lowConfidence: boolean;
   lowConfidenceMessage?: string;
 }
+
+const TOOL_KINDS: readonly ToolOutput['kind'][] = ['aggregate', 'compare', 'list', 'extract', 'unsupported'];
 
 export function toolOutputToInterpretation(question: string, out: ToolOutput): InterpretedQuestion {
   const base = {
@@ -101,6 +146,19 @@ export function toolOutputToInterpretation(question: string, out: ToolOutput): I
     interpretation = { kind: 'compare', field: out.compareField, a: out.compareA, b: out.compareB, base };
   } else if (out.kind === 'list' && out.listKind) {
     interpretation = { kind: 'list', list: out.listKind };
+  } else if (out.kind === 'unsupported' && out.unsupportedReport) {
+    interpretation = { kind: 'unsupported', report: out.unsupportedReport };
+  } else if (out.kind === 'extract') {
+    const report = BUILT_IN_VIEWS.find((v) => v.id === out.reportId) ?? null;
+    const extract = composeExtract(report, {
+      grain: out.grain,
+      period: out.registerPeriod,
+      country: out.country && out.country !== 'all' ? out.country : undefined,
+      type: out.type ? (out.type as DeclarationType | 'all') : undefined,
+      status: out.status,
+      gapsOnly: out.gapsOnly,
+    });
+    interpretation = out.columns?.length ? { ...extract, view: { ...extract.view, columns: out.columns } } : extract;
   }
   assertValidInterpretation(interpretation);
   return {
@@ -168,9 +226,8 @@ export class AnthropicDevAskEngine implements AskEngine {
       throw new Error('Model did not return an interpretation');
     }
     const out = toolUse.input as Partial<ToolOutput>;
-    if (out.kind !== 'aggregate' && out.kind !== 'compare' && out.kind !== 'list') {
-      throw new Error(`Model returned unknown interpretation kind "${String(out.kind)}"`);
-    }
-    return toolOutputToInterpretation(question, { ...out, kind: out.kind, lowConfidence: out.lowConfidence === true });
+    const kind = TOOL_KINDS.find((k) => k === out.kind);
+    if (!kind) throw new Error(`Model returned unknown interpretation kind "${String(out.kind)}"`);
+    return toolOutputToInterpretation(question, { ...out, kind, lowConfidence: out.lowConfidence === true });
   }
 }

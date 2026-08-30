@@ -3,40 +3,8 @@ import { formatCount } from '../../domain/money';
 import { resolveColumns } from '../register/columns';
 import { useSavedViews } from '../register/saved-views-store';
 import { BUILT_IN_VIEWS, describeFilter, describeGrain, type RegisterView } from '../register/views';
+import { NOT_OFFERED_REPORTS } from '../../domain/reports-not-offered';
 import styles from './reports.module.css';
-
-/**
- * The requested reports the declaration data can produce — each is the register
- * configured a particular way — and, just as visibly, the ones it cannot
- * (principle #3: limitations are surfaced in the UI, not buried in docs).
- * Reasons are from docs/reports-sourcing.md.
- */
-const NOT_OFFERED: { name: string; reason: string }[] = [
-  {
-    name: 'VAT Reports',
-    reason:
-      'Needs each legal entity’s VAT registration number, which the declaration data does not carry. Once that list is supplied, an import-only VAT report follows — duty and VAT do not apply to export or transit declarations.',
-  },
-  {
-    name: 'MDR (Manifest Discrepancy Report)',
-    reason: 'Needs the manifest itself. No manifest field exists in the source list.',
-  },
-  {
-    name: 'MCD (Material Compliance Declaration) Report',
-    reason:
-      'Needs product composition and compliance data, which sits in the product master rather than on a declaration. The article number needed to join the two is optional on every declaration type.',
-  },
-  {
-    name: 'EC Sales',
-    reason:
-      'Concerns intra-EU supplies, which produce no customs declaration. It comes from the sales ledger, not from declaration data.',
-  },
-  {
-    name: 'Intrastat',
-    reason:
-      'Concerns intra-EU movements, which produce no customs declaration. It comes from the ERP’s goods movements, not from declaration data.',
-  },
-];
 
 export function ReportsPage() {
   const [saved] = useSavedViews();
@@ -64,8 +32,8 @@ export function ReportsPage() {
           does not contain, so offering them from this product would be a claim the data cannot support.
         </p>
         <dl className={styles.reasons}>
-          {NOT_OFFERED.map((r) => (
-            <div key={r.name} className={styles.reason}>
+          {NOT_OFFERED_REPORTS.map((r) => (
+            <div key={r.id} className={styles.reason}>
               <dt>{r.name}</dt>
               <dd>{r.reason}</dd>
             </div>

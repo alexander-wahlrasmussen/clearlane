@@ -1,9 +1,13 @@
 import { COUNTRY_NAMES } from '../domain/countries';
-import { DECLARATION_TYPES } from '../domain/declaration';
+import { DECLARATION_STATUSES, DECLARATION_TYPES } from '../domain/declaration';
+import { NOT_OFFERED_REPORT_IDS } from '../domain/reports-not-offered';
+import { registerColumn } from '../features/register/columns';
+import { PERIOD_LABEL } from '../features/register/register-state';
 import {
   METRIC_LABEL,
   PERIODS,
   type AggregateInterpretation,
+  type ExtractInterpretation,
   type Interpretation,
   type InterpretedQuestion,
 } from './ask-types';
@@ -23,6 +27,8 @@ export class InvalidInterpretationError extends Error {
 const GROUPINGS = ['none', 'country', 'month', 'commodity', 'type'] as const;
 const LIST_KINDS = ['awaiting', 'gaps', 'stale', 'attention'] as const;
 const COMPARE_FIELDS = ['period', 'country', 'type'] as const;
+const GRAINS = ['declaration', 'line'] as const;
+const SORT_KEYS = ['date', 'customsValue', 'duty', 'vat'] as const;
 
 const isString = (v: unknown): v is string => typeof v === 'string';
 const oneOf = (v: unknown, set: readonly string[]) => isString(v) && set.includes(v);
@@ -48,6 +54,40 @@ function aggregateProblem(a: AggregateInterpretation): string | null {
   return null;
 }
 
+/**
+ * An extract is a register view, so it is checked against the register's own
+ * vocabulary: the column registry, the date ranges, the statuses. A column the
+ * registry does not offer at that grain is rejected, not dropped — the model
+ * was given the closed list.
+ */
+function extractProblem(e: ExtractInterpretation): string | null {
+  if (!isString(e.name) || !e.name.trim()) return 'extract has no name';
+  if (e.reportId !== null && !isString(e.reportId)) return 'malformed report id';
+  const v = e.view as Partial<ExtractInterpretation['view']> | null;
+  if (typeof v !== 'object' || v === null) return 'extract has no view';
+  const grain = GRAINS.find((g) => g === v.grain);
+  if (!grain) return `unknown grain "${String(v.grain)}"`;
+  if (!Array.isArray(v.columns) || v.columns.length === 0) return 'extract has no columns';
+  for (const id of v.columns) {
+    const c = isString(id) ? registerColumn(id) : undefined;
+    if (!c) return `unknown column "${String(id)}"`;
+    if (!c.grains.includes(grain)) return `column "${id}" is not offered at ${grain} grain`;
+  }
+  const f = v.filter as Partial<ExtractInterpretation['view']['filter']> | null;
+  if (typeof f !== 'object' || f === null) return 'extract has no filter';
+  if (!oneOf(f.period, Object.keys(PERIOD_LABEL))) return `unknown date range "${String(f.period)}"`;
+  if (f.country !== 'all' && !isCountry(f.country)) return `unknown country "${String(f.country)}"`;
+  if (f.type !== 'all' && !oneOf(f.type, DECLARATION_TYPES)) return `unknown declaration type "${String(f.type)}"`;
+  if (f.status !== 'all' && !oneOf(f.status, DECLARATION_STATUSES)) return `unknown status "${String(f.status)}"`;
+  if (!isString(f.search)) return 'malformed search';
+  if (typeof f.gapsOnly !== 'boolean') return 'malformed data-gaps flag';
+  const s = v.sort as Partial<ExtractInterpretation['view']['sort']> | null;
+  if (typeof s !== 'object' || s === null || !oneOf(s.sort, SORT_KEYS) || !oneOf(s.order, ['asc', 'desc'])) {
+    return 'malformed sort';
+  }
+  return null;
+}
+
 /** Plain-English description of what is wrong, or null when the interpretation is usable. */
 export function interpretationProblem(i: Interpretation): string | null {
   switch (i.kind) {
@@ -55,6 +95,10 @@ export function interpretationProblem(i: Interpretation): string | null {
       return aggregateProblem(i);
     case 'list':
       return oneOf(i.list, LIST_KINDS) ? null : `unknown list kind "${String(i.list)}"`;
+    case 'extract':
+      return extractProblem(i);
+    case 'unsupported':
+      return oneOf(i.report, NOT_OFFERED_REPORT_IDS) ? null : `unknown report "${String(i.report)}"`;
     case 'compare': {
       if (!oneOf(i.field, COMPARE_FIELDS)) return `unknown comparison field "${String(i.field)}"`;
       const valid =

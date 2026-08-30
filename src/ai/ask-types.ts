@@ -1,4 +1,6 @@
 import type { DeclarationType } from '../domain/declaration';
+import type { NotOfferedReportId } from '../domain/reports-not-offered';
+import type { ViewConfig } from '../features/register/views';
 
 /**
  * A structured interpretation of a natural-language question. This is the ONLY
@@ -80,7 +82,37 @@ export interface ListInterpretation {
   list: ListKind;
 }
 
-export type Interpretation = AggregateInterpretation | CompareInterpretation | ListInterpretation;
+/**
+ * A row-level extract: the register configured a particular way — rows,
+ * columns, filters, sort — exactly as the MVP's saved reports are (a report is
+ * a question whose interpretation is already known). Its rows are its evidence.
+ */
+export interface ExtractInterpretation {
+  kind: 'extract';
+  /** What the answer is called — the report's name, or a plain description of the rows. */
+  name: string;
+  /** The built-in or saved report this started from, or null when composed from the question. */
+  reportId: string | null;
+  view: ViewConfig;
+}
+
+/**
+ * A requested report the declaration data cannot produce. The answer is the
+ * reason, and nothing else — no numbers, no evidence, no draft section.
+ */
+export interface UnsupportedInterpretation {
+  kind: 'unsupported';
+  report: NotOfferedReportId;
+}
+
+/** The kinds whose answer is computed from the declaration set in answer-compute.ts. */
+export type ComputedInterpretation = AggregateInterpretation | CompareInterpretation | ListInterpretation;
+
+export type Interpretation = ComputedInterpretation | ExtractInterpretation | UnsupportedInterpretation;
+
+export function isComputed(i: Interpretation): i is ComputedInterpretation {
+  return i.kind === 'aggregate' || i.kind === 'compare' || i.kind === 'list';
+}
 
 export interface Confidence {
   low: boolean;

@@ -1,3 +1,6 @@
+import type { DeclarationStatus } from '../domain/declaration';
+import type { NotOfferedReportId } from '../domain/reports-not-offered';
+import { BUILT_IN_VIEWS, type RegisterView } from '../features/register/views';
 import type { AskEngine } from './ask-engine';
 import type {
   AggregateInterpretation,
@@ -9,6 +12,7 @@ import type {
   Metric,
   PeriodKey,
 } from './ask-types';
+import { composeExtract, registerPeriodFor } from './extract-view';
 
 /**
  * Deterministic keyword interpreter — the no-network fallback for local dev
@@ -42,6 +46,9 @@ const STOP =
   'the we our own in on of for paid pay show me tell what which who how much many is are was were to a an and with per by over from since this that these total all please give list across during between at it as do does did have has had i you us they last first each any more get went spend spent should would'.split(' ');
 const METW =
   'duty duties vat tax taxes value values worth cost costs spend declarations declaration count number volume amount import imports imported export exports exported transit shipments shipment goods trend monthly month months country countries commodity commodities products product top type types compare vs versus year ytd quarter q1 q2 q3 released release awaiting waiting delayed stuck gaps gap missing unverified verified populated refreshed refresh stale updated attention issues issue anomalies anomaly risk review problems'.split(' ');
+/** Report and extract vocabulary — rows, not figures. */
+const REPW =
+  'report reports reporting summary overview line lines level order orders status rows row table extract sheet spreadsheet csv excel download pull columns return returns intrastat ec sales esl mdr manifest discrepancy mcd material compliance completed amended control under customs'.split(' ');
 const MONTH_WORDS: Record<string, PeriodKey> = {
   march: 'm03', mar: 'm03', april: 'm04', apr: 'm04', may: 'm05',
   june: 'm06', jun: 'm06', july: 'm07', jul: 'm07', august: 'm08', aug: 'm08',
@@ -50,7 +57,7 @@ const MONTH_WORDS: Record<string, PeriodKey> = {
 let vocabCache: Set<string> | null = null;
 function vocab(): Set<string> {
   if (vocabCache) return vocabCache;
-  const v = new Set([...STOP, ...METW, ...Object.keys(MONTH_WORDS), 'time', 'date', 'data', 'customs', 'insights']);
+  const v = new Set([...STOP, ...METW, ...REPW, ...Object.keys(MONTH_WORDS), 'time', 'date', 'data', 'customs', 'insights']);
   for (const a of CTY) for (const w of a.slice(1)) for (const x of w.split(' ')) v.add(x);
   for (const a of ORG) for (const w of a.slice(1)) for (const x of w.split(' ')) v.add(x);
   for (const g of GDS) for (const w of g[2]) v.add(w);
@@ -132,6 +139,32 @@ function confidenceOf(t: string, signals: number): Confidence {
   return { low: false, message: '' };
 }
 
+/** Requested reports the data cannot produce — the answer is the reason (principle #6). */
+const NOT_OFFERED_PATTERNS: [NotOfferedReportId, RegExp][] = [
+  ['vat', /\bvat (report|reports|return|returns|reporting)\b/],
+  ['mdr', /\bmdr\b|manifest discrepanc/],
+  ['mcd', /\bmcd\b|material compliance/],
+  ['ec-sales', /\bec sales\b|\besl\b/],
+  ['intrastat', /intrastat/],
+];
+
+/** The built-in reports by the names people use for them. */
+const REPORT_PATTERNS: [RegisterView, RegExp][] = [
+  [BUILT_IN_VIEWS[0]!, /declaration summary/],
+  [BUILT_IN_VIEWS[1]!, /line overview|goods lines|goods-line|per line|line level|each line|by line/],
+  [BUILT_IN_VIEWS[2]!, /order status|declaration status|status report|status of|where .* stand/],
+];
+
+/** Verbs that ask for rows rather than a figure. */
+const EXTRACT_VERBS = /^ ?(show|list|export|give me|get|pull|download|table of|extract|open)\b.*\bdeclarations?\b/;
+
+const STATUS_WORDS: [DeclarationStatus, RegExp][] = [
+  ['Released', /\breleased\b/],
+  ['Completed', /\bcompleted\b/],
+  ['Amended', /\bamended\b/],
+  ['Under customs control', /under (customs )?control/],
+];
+
 const LIST_PATTERNS: [Interpretation & { kind: 'list' }, RegExp][] = [
   [{ kind: 'list', list: 'awaiting' }, /awaiting|not yet released|unreleased|stuck|delayed|waiting/],
   [{ kind: 'list', list: 'gaps' }, /\bgap|missing|not populated|unverified|not verified|incomplete/],
@@ -139,12 +172,60 @@ const LIST_PATTERNS: [Interpretation & { kind: 'list' }, RegExp][] = [
   [{ kind: 'list', list: 'attention' }, /attention|issue|anomal|risk|review|problem/],
 ];
 
+function extractOf(t: string, base: RegisterView | null): InterpretedQuestion['interpretation'] & { exact: boolean } {
+  const country = matchCountry(t);
+  const type = matchType(t);
+  const askPeriod = matchPeriod(t);
+  const period = askPeriod ? registerPeriodFor(askPeriod) : null;
+  const status = STATUS_WORDS.find(([, re]) => re.test(t))?.[0];
+  const grain = /goods lines|goods-line|per line|line level|each line|by line/.test(t) ? 'line' : undefined;
+  const interp = composeExtract(base, {
+    grain,
+    period: period?.period,
+    country: country ?? undefined,
+    type: type ?? undefined,
+    status,
+    gapsOnly: /\bgap|missing|not populated|unverified|not verified|incomplete/.test(t) || undefined,
+  });
+  return { ...interp, exact: period?.exact ?? true };
+}
+
+function extractQuestion(question: string, t: string, base: RegisterView | null): InterpretedQuestion {
+  const { exact, ...interpretation } = extractOf(t, base);
+  const confidence = confidenceOf(t, 2);
+  if (!exact) {
+    return {
+      question,
+      interpretation,
+      confidence: {
+        low: true,
+        message:
+          'The register’s date ranges are this month, the last 3 months, the last 6 months and year to date — the smallest one covering the period asked for is shown. Adjust it above if that is not what you meant.' +
+          (confidence.low ? ` ${confidence.message}` : ''),
+      },
+    };
+  }
+  return { question, interpretation, confidence };
+}
+
 export function interpretQuestion(question: string): InterpretedQuestion {
   const t = ` ${question.toLowerCase().replace(/[?.,!;:]/g, ' ').replace(/\s+/g, ' ')} `;
+
+  for (const [report, re] of NOT_OFFERED_PATTERNS) {
+    if (re.test(t)) return { question, interpretation: { kind: 'unsupported', report }, confidence: { low: false, message: '' } };
+  }
+
+  // A report by name is an extract with a known interpretation.
+  for (const [view, re] of REPORT_PATTERNS) {
+    if (re.test(t)) return extractQuestion(question, t, view);
+  }
 
   for (const [interp, re] of LIST_PATTERNS) {
     if (re.test(t)) return { question, interpretation: interp, confidence: confidenceOf(t, 2) };
   }
+
+  // Rows asked for without naming a report start from the Declaration Summary.
+  if (EXTRACT_VERBS.test(t) || /\breport\b/.test(t)) return extractQuestion(question, t, null);
 
   if (/\bvs\b|\bversus\b| compare /.test(t)) {
     const cmp = parseCompare(t);

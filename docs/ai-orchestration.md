@@ -13,8 +13,16 @@ computed from. If the data cannot support the question, the answer says so.
    with `tool_choice` forced. The tool schema mirrors the
    `Interpretation` union in src/ai/ask-types.ts: aggregate (metric, period,
    country, type, grouping, goods filter, origin), compare (field + two sides),
-   or list (awaiting / gaps / stale / attention). Anything the schema cannot
-   express must set `lowConfidence` with a plain British-English message.
+   list (awaiting / gaps / stale / attention), extract (a register view — a
+   built-in report by id, or a grain with filters and optional columns from the
+   closed column registry) or unsupported (one of the five requested reports
+   the data cannot produce). Anything the schema cannot express must set
+   `lowConfidence` with a plain British-English message.
+
+   Extracts are not computed: their rows are read through `DeclarationsClient`
+   exactly as the register reads them, and the rows are the evidence. A report
+   opened from the Ask page's "Reports" chips never calls the model at all —
+   its interpretation is its saved view (src/ai/extract-view.ts).
 
 2. **Compute** (`POST /ask/compute`, no model)
    The interpretation drives a deterministic query — in this prototype
