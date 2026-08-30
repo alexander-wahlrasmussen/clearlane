@@ -22,8 +22,6 @@ concurrency:
 
 env:
   PREVIEW_REPO: alexander-wahlrasmussen/clearlane-preview
-  # Must match the preview repo name: the site is served under this path.
-  BASE_PATH: /clearlane-preview/
 
 jobs:
   build-and-publish:
@@ -48,10 +46,12 @@ jobs:
       - name: End-to-end flows
         run: npx playwright test
 
-      - name: Build
+      - name: Build for Pages
         run: npm run build
         env:
-          BASE_PATH: ${{ env.BASE_PATH }}
+          # Must match the preview repo name: the site is served under this path.
+          # Set only here — the e2e step above builds and tests at /.
+          BASE_PATH: /clearlane-preview/
           VITE_FEEDBACK_URL: ${{ vars.FEEDBACK_URL }}
 
       - name: SPA fallback for deep links
