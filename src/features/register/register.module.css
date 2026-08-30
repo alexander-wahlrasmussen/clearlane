@@ -518,3 +518,53 @@
   line-height: 1.45;
   color: var(--ink-label);
 }
+
+/* ---- reports (saved views) ---------------------------------------------- */
+.reportRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #edeff2;
+}
+.modifiedTag {
+  padding: 1px 7px;
+  border: 1px solid var(--warning-border);
+  border-radius: 9px;
+  background: var(--warning-bg);
+  color: var(--warning-ink);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.saveForm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.saveInput {
+  height: 29px;
+  width: 240px;
+  padding: 0 9px;
+  border: 1px solid var(--border-2);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 12.5px;
+}
+.primaryBtnSmall {
+  composes: primaryBtn;
+  height: 29px;
+  padding: 0 12px;
+}
+.primaryBtnSmall:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.resetBtnSmall {
+  composes: resetBtn;
+  height: 29px;
+}

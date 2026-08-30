@@ -53,3 +53,55 @@ test('register switches grain and columns', async ({ page }) => {
   await page.getByRole('button', { name: 'Declarations', exact: true }).click();
   await expect(page.getByRole('columnheader', { name: 'Commodity code' })).toHaveCount(0);
 });
+
+/** Reports are saved views: open one, adjust it, save your own, export what is on screen. */
+test('reports open the register configured, and export follows the view', async ({ page }) => {
+  await page.goto('/mvp/reports');
+  await expect(page.getByRole('heading', { name: 'Reports', exact: true })).toBeVisible();
+  await expect(page.getByText('Declaration Line Overview')).toBeVisible();
+  // The reports the data cannot produce are named, with the reason.
+  await expect(page.getByText('Requested reports not offered here')).toBeVisible();
+  await expect(page.getByText('Intrastat', { exact: true })).toBeVisible();
+
+  // Open the line-grain report: goods-line rows and its columns.
+  await page.getByRole('row', { name: /Declaration Line Overview/ }).getByRole('link', { name: 'Open report' }).click();
+  await expect(page).toHaveURL(/view=declaration-line-overview/);
+  await expect(page.getByText(/\d+ goods lines/).first()).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Commodity code' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Net kg' })).toBeVisible();
+  await expect(page.getByLabel('Report')).toHaveValue('declaration-line-overview');
+
+  // Adjust it: the report is marked modified; a built-in one can only be saved as new.
+  await page.getByLabel('Declaration country').selectOption({ label: 'Germany' });
+  await expect(page.getByText('Modified')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Save as new report…' }).click();
+  await page.getByLabel('Report name').fill('German goods lines');
+  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page.getByLabel('Report')).toHaveValue(/^view-/);
+  await expect(page.getByText('Modified')).toHaveCount(0);
+  await expect(page.getByText('Your report.')).toBeVisible();
+
+  // Export states the grain and the visible columns, and the file is named after the report.
+  await page.getByRole('button', { name: 'Export results' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Export goods lines' });
+  await expect(dialog.getByText('German goods lines')).toBeVisible();
+  await expect(dialog.getByText(/one row per goods line/)).toBeVisible();
+  await expect(dialog.getByText(/Commodity code, Description, Country of origin/)).toBeVisible();
+  const download = page.waitForEvent('download');
+  await dialog.getByRole('button', { name: 'Export CSV' }).click();
+  expect((await download).suggestedFilename()).toBe('german-goods-lines.csv');
+
+  // The saved report survives a reload and is listed on the Reports page.
+  await page.reload();
+  await expect(page.getByLabel('Report')).toHaveValue(/^view-/);
+  await expect(page.getByRole('columnheader', { name: 'Commodity code' })).toBeVisible();
+  await page.getByRole('link', { name: 'Reports' }).click();
+  await expect(page.getByRole('row', { name: /German goods lines/ })).toContainText('Germany');
+
+  // Delete it from the register.
+  await page.getByRole('row', { name: /German goods lines/ }).getByRole('link', { name: 'Open report' }).click();
+  await page.getByRole('button', { name: 'Delete report' }).click();
+  await expect(page.getByLabel('Report')).toHaveValue('');
+  await expect(page).not.toHaveURL(/view=/);
+});

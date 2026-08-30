@@ -1,20 +1,35 @@
 import { useState } from 'react';
+import type { RegisterColumn } from '../register/columns';
 import styles from './export.module.css';
 
+/** What the file will contain, for a given setting of the optional line toggle. */
+export interface ExportPlan {
+  /** "1,204 goods lines — one row per goods line" */
+  rows: string;
+  /** The visible columns; Currency is added beside amounts by the builder. */
+  columns: readonly RegisterColumn[];
+  /** Plain statement of the layout, so users cannot double-count. */
+  note: string;
+}
+
 /**
- * Export configuration modal. The note under the options states exactly how
- * totals are laid out so users cannot double-count them.
+ * Export configuration modal. It states the rows, the columns and the layout
+ * before anything is written: the file is the register as shown, nothing else.
  */
 export function ExportDialog(props: {
   title: string;
   summary: [label: string, value: string][];
-  defaultIncludeLines: boolean;
+  /** When set, offers "Include goods-line detail"; the plan is recomputed as it changes. */
+  lineOption?: { defaultOn: boolean };
+  plan: (includeLines: boolean) => ExportPlan;
   onCancel: () => void;
   onConfirm: (format: 'csv' | 'xlsx', includeLines: boolean) => void | Promise<void>;
 }) {
-  const [includeLines, setIncludeLines] = useState(props.defaultIncludeLines);
+  const [includeLines, setIncludeLines] = useState(props.lineOption?.defaultOn ?? false);
   const [format, setFormat] = useState<'csv' | 'xlsx'>('csv');
   const [busy, setBusy] = useState(false);
+  const plan = props.plan(includeLines);
+  const currencyAdded = plan.columns.some((c) => c.amount) && !plan.columns.some((c) => c.id === 'currency');
 
   const confirm = async () => {
     setBusy(true);
@@ -33,19 +48,36 @@ export function ExportDialog(props: {
           {props.summary.map(([label, value]) => (
             <div key={label} className={styles.summaryPair}>
               <div className={styles.summaryLabel}>{label}</div>
-              <div className={label === 'Declarations' ? 'num' : undefined}>{value}</div>
+              <div>{value}</div>
             </div>
           ))}
+          <div className={styles.summaryPair}>
+            <div className={styles.summaryLabel}>Rows</div>
+            <div className="num">{plan.rows}</div>
+          </div>
+          <div className={styles.summaryPair}>
+            <div className={styles.summaryLabel}>Columns</div>
+            <div>
+              <span className="num">{plan.columns.length}</span>
+              {currencyAdded ? ' shown, plus Currency' : ' shown'}
+              <div className={styles.columnList}>
+                {plan.columns.map((c) => c.label).join(', ')}
+                {currencyAdded ? ', Currency' : ''}
+              </div>
+            </div>
+          </div>
         </div>
         <div className={styles.options}>
-          <label className={styles.check}>
-            <input
-              type="checkbox"
-              checked={includeLines}
-              onChange={(e) => setIncludeLines(e.target.checked)}
-            />
-            Include goods-line detail
-          </label>
+          {props.lineOption && (
+            <label className={styles.check}>
+              <input
+                type="checkbox"
+                checked={includeLines}
+                onChange={(e) => setIncludeLines(e.target.checked)}
+              />
+              Include goods-line detail
+            </label>
+          )}
           <div className={styles.formatRow}>
             <span className={styles.formatLabel}>File format:</span>
             <label className={styles.radio}>
@@ -71,9 +103,10 @@ export function ExportDialog(props: {
           </div>
         </div>
         <div className={styles.note}>
-          {includeLines
-            ? 'The file contains one “Declaration” row per declaration and one “Goods line” row per line. Declaration totals appear only on declaration rows, so totals are not counted twice.'
-            : 'The file contains one row per declaration with declaration-level totals only.'}
+          {plan.note}
+          {currencyAdded &&
+            ' Currency is added as a column so every amount states the currency it was declared in.'}
+          {' Dates are written as YYYY-MM-DD. Fields with no value carry their state — “Not populated”, “Not available”, “Not applicable” or “Not verified” — never a blank.'}
         </div>
         <div className={styles.actions}>
           <button type="button" className={styles.cancelBtn} onClick={props.onCancel}>
@@ -87,3 +120,11 @@ export function ExportDialog(props: {
     </div>
   );
 }
+
+/** The layout statement for each grain, shared by the register and the detail page. */
+export const EXPORT_NOTE: Record<'declaration' | 'line', string> = {
+  declaration:
+    'One row per declaration, with the columns shown on screen. Amounts are whole units in the declared currency.',
+  line:
+    'One row per goods line, with the columns shown on screen. Declaration details repeat on each of a declaration’s lines; declaration totals are not included, so summing a column never counts a declaration twice. Amounts are whole units in the declared currency.',
+};

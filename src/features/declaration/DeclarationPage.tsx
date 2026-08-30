@@ -7,8 +7,9 @@ import { formatCount, formatMoney } from '../../domain/money';
 import { LoadingScreen, ErrorScreen } from '../../app/StatusScreens';
 import { useToast } from '../../app/ToastContext';
 import { StatusBadge, Term } from '../../components/FieldDisplay';
-import { ExportDialog } from '../export/ExportDialog';
-import { exportDeclarations } from '../export/export-service';
+import { ExportDialog, EXPORT_NOTE } from '../export/ExportDialog';
+import { exportRows, fileSlug } from '../export/export-service';
+import { columnsForGrain, GRAIN_LABEL, type RegisterRow } from '../register/columns';
 import { SummaryTab } from './tabs/SummaryTab';
 import { PartiesTab } from './tabs/PartiesTab';
 import { GoodsLinesTab } from './tabs/GoodsLinesTab';
@@ -116,17 +117,37 @@ export function DeclarationPage() {
       {exportOpen && (
         <ExportDialog
           title="Export declaration"
-          defaultIncludeLines
+          lineOption={{ defaultOn: true }}
           summary={[
             ['Legal entity', d.legalEntity],
             ['Date range', formatIsoDate(d.clearanceDate)],
             ['Countries', d.countryName],
             ['Declaration types', typeLabel(d.type)],
-            ['Declarations', '1'],
           ]}
+          plan={(includeLines) =>
+            includeLines
+              ? {
+                  rows: `${formatCount(d.lines.length)} goods lines — one row per goods line`,
+                  columns: columnsForGrain('line'),
+                  note: `Every field of this declaration and its goods lines. ${EXPORT_NOTE.line}`,
+                }
+              : {
+                  rows: '1 declaration — one row',
+                  columns: columnsForGrain('declaration'),
+                  note: `Every declaration-level field. ${EXPORT_NOTE.declaration}`,
+                }
+          }
           onCancel={() => setExportOpen(false)}
           onConfirm={(format, includeLines) => {
-            exportDeclarations([d], { format, includeLines, filename: `declaration-${d.mrn}` });
+            const grain = includeLines ? 'line' : 'declaration';
+            const rows: RegisterRow[] = includeLines
+              ? d.lines.map((line) => ({ declaration: d, line }))
+              : [{ declaration: d, line: null }];
+            exportRows(rows, columnsForGrain(grain), {
+              format,
+              filename: `declaration-${fileSlug(d.mrn)}`,
+              sheetName: GRAIN_LABEL[grain],
+            });
             setExportOpen(false);
             toast('Export ready — file downloaded');
           }}

@@ -5,9 +5,11 @@ import type {
   DeclarationsClient,
   GoodsLineRow,
   ListParams,
+  ListSort,
   Page,
   RegisterSummary,
 } from '../api/declarations-client';
+import { DEFAULT_SORT } from '../api/declarations-client';
 import { hasDataGap, type Declaration } from '../domain/declaration';
 import { eurEquivalentMinor } from '../domain/money';
 import { COUNTRIES, CUSTOMER, generateDeclarations, REFRESHED_AT } from './synthetic-data';
@@ -64,23 +66,55 @@ export class MockDeclarationsClient implements DeclarationsClient {
     });
   }
 
-  listDeclarations(p: ListParams): Promise<Page<Declaration>> {
-    const rows = this.applyFilter(p.filter);
+  private sortDeclarations(rows: Declaration[], s: ListSort): Declaration[] {
     // Cross-currency sort keys use the EUR equivalent at the declared rate.
     const key = (d: Declaration): string | number =>
-      p.sort === 'date'
+      s.sort === 'date'
         ? d.clearanceDate
-        : p.sort === 'customsValue'
+        : s.sort === 'customsValue'
           ? eurEquivalentMinor(d.customsValueTotal, d.declaredFxToEur)
-          : p.sort === 'duty'
+          : s.sort === 'duty'
             ? eurEquivalentMinor(d.dutyTotal, d.declaredFxToEur)
             : eurEquivalentMinor(d.vatTotal, d.declaredFxToEur);
-    const dir = p.order === 'asc' ? 1 : -1;
-    const sorted = [...rows].sort((a, b) => {
+    const dir = s.order === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
       const ka = key(a);
       const kb = key(b);
       return ka < kb ? -dir : ka > kb ? dir : 0;
     });
+  }
+
+  private sortLines(rows: GoodsLineRow[], s: ListSort): GoodsLineRow[] {
+    // Line-grain sort keys read the line's own amounts, converted at the rate
+    // declared on its parent — never a live rate (principle #2).
+    const key = (r: GoodsLineRow): string | number =>
+      s.sort === 'date'
+        ? r.declaration.clearanceDate
+        : s.sort === 'customsValue'
+          ? eurEquivalentMinor(r.line.customsValue, r.declaration.declaredFxToEur)
+          : s.sort === 'duty'
+            ? eurEquivalentMinor(r.line.dutyAmount, r.declaration.declaredFxToEur)
+            : eurEquivalentMinor(r.line.vatAmount, r.declaration.declaredFxToEur);
+    const dir = s.order === 'asc' ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const ka = key(a);
+      const kb = key(b);
+      if (ka < kb) return -dir;
+      if (ka > kb) return dir;
+      // Stable within a declaration so its lines stay in declared order.
+      return a.line.lineNo - b.line.lineNo;
+    });
+  }
+
+  private filteredLines(f: DeclarationFilter): GoodsLineRow[] {
+    return this.applyFilter(f).flatMap((declaration) =>
+      declaration.lines.map((line) => ({ declaration, line })),
+    );
+  }
+
+  listDeclarations(p: ListParams): Promise<Page<Declaration>> {
+    const rows = this.applyFilter(p.filter);
+    const sorted = this.sortDeclarations(rows, p);
     const start = (p.page - 1) * p.pageSize;
     return this.delay({
       items: sorted.slice(start, start + p.pageSize),
@@ -91,28 +125,8 @@ export class MockDeclarationsClient implements DeclarationsClient {
   }
 
   listGoodsLines(p: ListParams): Promise<Page<GoodsLineRow>> {
-    const rows: GoodsLineRow[] = this.applyFilter(p.filter).flatMap((declaration) =>
-      declaration.lines.map((line) => ({ declaration, line })),
-    );
-    // Line-grain sort keys read the line's own amounts, converted at the rate
-    // declared on its parent — never a live rate (principle #2).
-    const key = (r: GoodsLineRow): string | number =>
-      p.sort === 'date'
-        ? r.declaration.clearanceDate
-        : p.sort === 'customsValue'
-          ? eurEquivalentMinor(r.line.customsValue, r.declaration.declaredFxToEur)
-          : p.sort === 'duty'
-            ? eurEquivalentMinor(r.line.dutyAmount, r.declaration.declaredFxToEur)
-            : eurEquivalentMinor(r.line.vatAmount, r.declaration.declaredFxToEur);
-    const dir = p.order === 'asc' ? 1 : -1;
-    const sorted = [...rows].sort((a, b) => {
-      const ka = key(a);
-      const kb = key(b);
-      if (ka < kb) return -dir;
-      if (ka > kb) return dir;
-      // Stable within a declaration so its lines stay in declared order.
-      return a.line.lineNo - b.line.lineNo;
-    });
+    const rows = this.filteredLines(p.filter);
+    const sorted = this.sortLines(rows, p);
     const start = (p.page - 1) * p.pageSize;
     return this.delay({
       items: sorted.slice(start, start + p.pageSize),
@@ -148,7 +162,11 @@ export class MockDeclarationsClient implements DeclarationsClient {
     return this.delay(d);
   }
 
-  listAllDeclarations(f: DeclarationFilter): Promise<Declaration[]> {
-    return this.delay(this.applyFilter(f));
+  listAllDeclarations(f: DeclarationFilter, sort: ListSort = DEFAULT_SORT): Promise<Declaration[]> {
+    return this.delay(this.sortDeclarations(this.applyFilter(f), sort));
+  }
+
+  listAllGoodsLines(f: DeclarationFilter, sort: ListSort = DEFAULT_SORT): Promise<GoodsLineRow[]> {
+    return this.delay(this.sortLines(this.filteredLines(f), sort));
   }
 }

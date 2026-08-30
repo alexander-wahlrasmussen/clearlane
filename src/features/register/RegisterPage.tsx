@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import {
   useDeclarationsClient,
   useDeclarationsList,
@@ -6,14 +7,14 @@ import {
   useRegisterSummary,
   useScope,
 } from '../../api/queries';
-import type { SortKey } from '../../api/declarations-client';
+import type { ListSort, SortKey } from '../../api/declarations-client';
 import { formatCount } from '../../domain/money';
 import { typeLabel, DECLARATION_STATUSES } from '../../domain/declaration';
 import { LoadingScreen, ErrorScreen } from '../../app/StatusScreens';
 import { useEntityFilter } from '../../app/MvpShell';
 import { useToast } from '../../app/ToastContext';
-import { ExportDialog } from '../export/ExportDialog';
-import { exportDeclarations } from '../export/export-service';
+import { ExportDialog, EXPORT_NOTE } from '../export/ExportDialog';
+import { exportRows, fileSlug } from '../export/export-service';
 import {
   activeChips,
   DEFAULT_REGISTER_STATE,
@@ -23,16 +24,12 @@ import {
 } from './register-state';
 import { SummaryCards } from './SummaryCards';
 import { DataScopePanel } from './DataScopePanel';
-import { RegisterTable, type TableSort } from './DeclarationsTable';
+import { RegisterTable } from './DeclarationsTable';
 import { ColumnPicker } from './ColumnPicker';
-import {
-  DEFAULT_COLUMNS,
-  GRAIN_LABEL,
-  registerColumn,
-  type Grain,
-  type RegisterColumn,
-  type RegisterRow,
-} from './columns';
+import { ReportBar } from './ReportBar';
+import { DEFAULT_COLUMNS, GRAIN_LABEL, resolveColumns, type Grain, type RegisterRow } from './columns';
+import { BUILT_IN_VIEWS, findView, viewMatches, type RegisterView, type ViewConfig } from './views';
+import { newViewId, useSavedViews } from './saved-views-store';
 import styles from './register.module.css';
 
 const PAGE_SIZE = 15;
@@ -40,20 +37,30 @@ const GRAINS: readonly Grain[] = ['declaration', 'line'];
 
 export function RegisterPage() {
   const [entity] = useEntityFilter();
-  const [state, setState] = useState<RegisterState>(DEFAULT_REGISTER_STATE);
-  const [sort, setSort] = useState<TableSort>({ key: 'date', order: 'desc' });
+  const navigate = useNavigate();
+  const { view: viewParam } = useSearch({ strict: false }) as { view?: string };
+  const [savedViews, setSavedViews] = useSavedViews();
+  const allViews = useMemo(() => [...BUILT_IN_VIEWS, ...savedViews], [savedViews]);
+
+  // A report named in the URL seeds the initial state, so the register opens
+  // on it without first fetching the defaults.
+  const initialView = findView(allViews, viewParam);
+  const [activeId, setActiveId] = useState<string | null>(initialView?.id ?? null);
+  const [state, setState] = useState<RegisterState>(initialView?.filter ?? DEFAULT_REGISTER_STATE);
+  const [sort, setSort] = useState<ListSort>(initialView?.sort ?? { sort: 'date', order: 'desc' });
   const [page, setPage] = useState(1);
-  const [grain, setGrain] = useState<Grain>('declaration');
-  const [columnIds, setColumnIds] = useState<Record<Grain, string[]>>({
-    declaration: [...DEFAULT_COLUMNS.declaration],
-    line: [...DEFAULT_COLUMNS.line],
+  const [grain, setGrain] = useState<Grain>(initialView?.grain ?? 'declaration');
+  const [columnIds, setColumnIds] = useState<Record<Grain, readonly string[]>>({
+    declaration: DEFAULT_COLUMNS.declaration,
+    line: DEFAULT_COLUMNS.line,
+    ...(initialView ? { [initialView.grain]: initialView.columns } : {}),
   });
   const [exportOpen, setExportOpen] = useState(false);
   const toast = useToast();
   const client = useDeclarationsClient();
 
   const filter = toFilter(state, entity);
-  const params = { filter, sort: sort.key, order: sort.order, page, pageSize: PAGE_SIZE };
+  const params = { filter, ...sort, page, pageSize: PAGE_SIZE };
   const scope = useScope();
   const declarations = useDeclarationsList(params, grain === 'declaration');
   const goodsLines = useGoodsLinesList(params, grain === 'line');
@@ -62,10 +69,32 @@ export function RegisterPage() {
 
   // Unknown ids are dropped rather than thrown on: a saved column set must not
   // break the register if a column is later removed from the registry.
-  const columns: RegisterColumn[] = useMemo(
-    () => columnIds[grain].map(registerColumn).filter((c): c is RegisterColumn => c !== undefined),
-    [columnIds, grain],
-  );
+  const columns = useMemo(() => resolveColumns(columnIds[grain]), [columnIds, grain]);
+
+  const applyView = (v: ViewConfig) => {
+    setState(v.filter);
+    setGrain(v.grain);
+    setColumnIds((c) => ({ ...c, [v.grain]: v.columns }));
+    setSort(v.sort);
+    setPage(1);
+  };
+
+  // The URL is the way in to a report (from the Reports page, a bookmark, a
+  // shared link). Selecting one here writes the URL, and this applies it.
+  useEffect(() => {
+    if (!viewParam) {
+      setActiveId(null);
+      return;
+    }
+    const v = findView(allViews, viewParam);
+    if (!v) {
+      toast('That report no longer exists');
+      void navigate({ to: '/mvp', search: {}, replace: true });
+      return;
+    }
+    setActiveId(v.id);
+    applyView(v);
+  }, [viewParam, allViews]);
 
   if (scope.isPending || (list.isPending && !list.data)) return <LoadingScreen />;
   if (scope.isError || list.isError) {
@@ -93,19 +122,52 @@ export function RegisterPage() {
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const shownPage = Math.min(page, pages);
 
+  const current: ViewConfig = { grain, columns: columnIds[grain], filter: state, sort };
+  const activeView = findView(allViews, activeId);
+  const modified = activeView ? !viewMatches(activeView, current) : false;
+
+  const selectView = (id: string | null) =>
+    void navigate({ to: '/mvp', search: id ? { view: id } : {}, replace: true });
+
+  const saveAs = (name: string) => {
+    const v: RegisterView = { ...current, id: newViewId(), name, description: '', builtIn: false };
+    setSavedViews([...savedViews, v]);
+    selectView(v.id);
+    toast(`Report “${name}” saved`);
+  };
+  const saveChanges = () => {
+    if (!activeView || activeView.builtIn) return;
+    setSavedViews(savedViews.map((v) => (v.id === activeView.id ? { ...activeView, ...current } : v)));
+    toast(`Report “${activeView.name}” updated`);
+  };
+  const deleteView = () => {
+    if (!activeView || activeView.builtIn) return;
+    setSavedViews(savedViews.filter((v) => v.id !== activeView.id));
+    selectView(null);
+    toast(`Report “${activeView.name}” deleted`);
+  };
+
   const switchGrain = (g: Grain) => {
     setGrain(g);
     setPage(1);
   };
 
   const onSort = (key: SortKey) => {
-    setSort((s) => ({ key, order: s.key === key && s.order === 'desc' ? 'asc' : 'desc' }));
+    setSort((s) => ({ sort: key, order: s.sort === key && s.order === 'desc' ? 'asc' : 'desc' }));
     setPage(1);
   };
 
-  const doExport = async (format: 'csv' | 'xlsx', includeLines: boolean) => {
-    const rows = await client.listAllDeclarations(filter);
-    exportDeclarations(rows, { format, includeLines, filename: 'declarations-export' });
+  const doExport = async (format: 'csv' | 'xlsx') => {
+    const all: RegisterRow[] =
+      grain === 'declaration'
+        ? (await client.listAllDeclarations(filter, sort)).map((d) => ({ declaration: d, line: null }))
+        : await client.listAllGoodsLines(filter, sort);
+    const filename = activeView
+      ? fileSlug(activeView.name)
+      : grain === 'declaration'
+        ? 'declarations-export'
+        : 'goods-lines-export';
+    exportRows(all, columns, { format, filename, sheetName: GRAIN_LABEL[grain] });
     setExportOpen(false);
     toast('Export ready — file downloaded');
   };
@@ -199,6 +261,17 @@ export function RegisterPage() {
             Reset
           </button>
         </div>
+        <ReportBar
+          builtIn={BUILT_IN_VIEWS}
+          saved={savedViews}
+          active={activeView}
+          modified={modified}
+          onSelect={selectView}
+          onSaveAs={saveAs}
+          onSaveChanges={saveChanges}
+          onDiscard={() => activeView && applyView(activeView)}
+          onDelete={deleteView}
+        />
         <div className={styles.viewRow}>
           <span className={styles.viewLabel}>Show</span>
           <div className={styles.grainToggle} role="group" aria-label="Row grain">
@@ -300,15 +373,21 @@ export function RegisterPage() {
 
       {exportOpen && summary.data && (
         <ExportDialog
-          title="Export declarations"
-          defaultIncludeLines={false}
+          title={grain === 'declaration' ? 'Export declarations' : 'Export goods lines'}
           summary={[
+            ...(activeView
+              ? [['Report', modified ? `${activeView.name} (modified)` : activeView.name] as [string, string]]
+              : []),
             ['Legal entity', entity === 'all' ? `${scope.data?.customerName ?? ''} — all entities` : entity],
             ['Date range', PERIOD_LABEL[state.period]],
             ['Countries', state.country === 'all' ? `All ${scope.data?.countries.length ?? 0} countries` : (scope.data?.countries.find((c) => c.code === state.country)?.name ?? state.country)],
             ['Declaration types', state.type === 'all' ? 'Import, export and transit' : typeLabel(state.type)],
-            ['Declarations', formatCount(summary.data.total)],
           ]}
+          plan={() => ({
+            rows: `${formatCount(total)} ${rowNoun} — one row per ${grain === 'declaration' ? 'declaration' : 'goods line'}`,
+            columns,
+            note: EXPORT_NOTE[grain],
+          })}
           onCancel={() => setExportOpen(false)}
           onConfirm={doExport}
         />

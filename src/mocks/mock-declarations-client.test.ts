@@ -92,3 +92,25 @@ describe('MockDeclarationsClient.listGoodsLines', () => {
     }
   });
 });
+
+describe('MockDeclarationsClient.listAllGoodsLines', () => {
+  const client = new MockDeclarationsClient({ latencyMs: 0 });
+
+  it('returns every line of the filtered set, in the order the register shows it', async () => {
+    const filter = { country: 'DE' as const };
+    const all = await client.listAllGoodsLines(filter, { sort: 'duty', order: 'asc' });
+    const declarations = await client.listAllDeclarations(filter);
+    expect(all.length).toBe(declarations.reduce((s, d) => s + d.lines.length, 0));
+
+    const firstPage = await client.listGoodsLines({ filter, sort: 'duty', order: 'asc', page: 1, pageSize: 20 });
+    expect(all.slice(0, 20).map((r) => `${r.declaration.mrn}#${r.line.lineNo}`)).toEqual(
+      firstPage.items.map((r) => `${r.declaration.mrn}#${r.line.lineNo}`),
+    );
+  });
+
+  it('listAllDeclarations follows the requested sort', async () => {
+    const asc = await client.listAllDeclarations({}, { sort: 'date', order: 'asc' });
+    const dates = asc.map((d) => d.clearanceDate);
+    expect([...dates].sort()).toEqual(dates);
+  });
+});

@@ -1,47 +1,34 @@
-import type { Declaration } from '../../domain/declaration';
+import { registerColumn, type ExportCell, type RegisterColumn, type RegisterRow } from '../register/columns';
 
 /**
- * Export row building. One "Declaration" row per declaration and one
- * "Goods line" row per line. Declaration totals appear ONLY on declaration
- * rows, so totals are never double-counted when the file is summed.
- * Amounts are whole units in the declared currency.
+ * Export row building. The file is the register as shown: the same grain, the
+ * same columns in the same order, every row of the filtered set.
  *
- * "Departure" is the declaration-level country of dispatch; "Origin" is the
- * goods origin declared on each line. They are different fields and never share
- * a column — a declaration can carry several line origins.
+ * Two things the column registry guarantees make this safe to sum:
+ *  - Declaration totals (customs value, duty, VAT summed from the lines) are only
+ *    offered at declaration grain, so a goods-line file never repeats a header
+ *    total on every line and a declaration file never lists its lines.
+ *  - The four field states export as their labels — "Not populated", never a
+ *    blank or a zero (principle #1).
+ *
+ * Amounts are whole units in the declared currency (principle #2), so Currency
+ * is written whenever an amount is, even if the user did not choose it.
  */
-export type ExportRow = (string | number)[];
+export type ExportRow = ExportCell[];
 
-export const EXPORT_HEADER: ExportRow = [
-  'Record type', 'MRN', 'Status', 'Clearance date', 'Country', 'Type', 'Customer reference',
-  'Importer/buyer', 'Exporter/seller', 'Departure', 'Destination', 'Currency',
-  'Customs value', 'Duty', 'VAT',
-  'Line no', 'Commodity code', 'Description', 'Origin', 'Quantity', 'Item value',
-  'Line customs value', 'Line duty', 'Line VAT',
-];
+/** The columns actually written: the visible set, plus Currency beside any amount. */
+export function exportColumns(visible: readonly RegisterColumn[]): RegisterColumn[] {
+  const needsCurrency = visible.some((c) => c.amount) && !visible.some((c) => c.id === 'currency');
+  if (!needsCurrency) return [...visible];
+  const currency = registerColumn('currency');
+  if (!currency) throw new Error('The column registry has no currency column');
+  return [...visible, currency];
+}
 
-const units = (minor: number) => Math.round(minor / 100);
-
-export function buildExportRows(declarations: Declaration[], includeLines: boolean): ExportRow[] {
-  const rows: ExportRow[] = [EXPORT_HEADER];
-  for (const d of declarations) {
-    rows.push([
-      'Declaration', d.mrn, d.status, d.clearanceDate, d.countryName, d.type, d.customerReference,
-      d.importer.name, d.exporter.name, d.departureCountry, d.destinationCountry, d.currency,
-      units(d.customsValueTotal.amountMinor), units(d.dutyTotal.amountMinor), units(d.vatTotal.amountMinor),
-      '', '', '', '', '', '', '', '', '',
-    ]);
-    if (includeLines) {
-      for (const l of d.lines) {
-        rows.push([
-          'Goods line', d.mrn, '', '', '', '', '', '', '', '', '', d.currency,
-          '', '', '',
-          l.lineNo, l.commodityCode, l.description, l.originCountry, l.quantity,
-          units(l.itemValue.amountMinor), units(l.customsValue.amountMinor),
-          units(l.dutyAmount.amountMinor), units(l.vatAmount.amountMinor),
-        ]);
-      }
-    }
-  }
-  return rows;
+export function buildExportRows(
+  rows: readonly RegisterRow[],
+  visible: readonly RegisterColumn[],
+): ExportRow[] {
+  const columns = exportColumns(visible);
+  return [columns.map((c) => c.label), ...rows.map((r) => columns.map((c) => c.exportValue(r)))];
 }

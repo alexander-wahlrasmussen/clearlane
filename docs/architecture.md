@@ -63,6 +63,12 @@ list. Editing interpretation chips recomputes without a model call
 4. **Native `title` tooltips** for term explanations (MRN, EORI, UCR…): the
    dotted-underline affordance from the design is kept; a custom tooltip
    component is a straightforward later swap.
+5. **Saved views in localStorage** for the prototype: a user's reports are
+   register configuration, not declaration data, so `DeclarationsClient` is
+   untouched and the store (`features/register/saved-views-store.ts`) takes its
+   `Storage` as a parameter. In production they belong with the user's account
+   behind the API; the read path already drops any stored view this build does
+   not recognise, so a schema change cannot break the register.
 
 ## Invariants the code enforces
 
@@ -72,5 +78,9 @@ list. Editing interpretation chips recomputes without a model call
   time; `FieldCell` renders a labelled chip, never a blank.
 - `reconcile()` compares goods-line sums to declaration totals exactly, and
   both detail tabs state the result — a mismatch is shown, not hidden.
+- Export writes the visible columns at the visible grain (`export-rows.ts`);
+  every column's `exportValue` labels the four field states rather than leaving
+  a blank, and Currency accompanies every amount. Declaration totals are only
+  offered at declaration grain, so a goods-line file cannot double-count.
 - Every AI answer carries `evidenceMrns` — the exact declarations it was
   computed from; the evidence drawer lists every one.

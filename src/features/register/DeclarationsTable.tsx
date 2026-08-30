@@ -1,14 +1,9 @@
 import { useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
-import type { SortKey } from '../../api/declarations-client';
+import type { ListSort, SortKey } from '../../api/declarations-client';
 import { ColumnHeaderLabel, type RegisterColumn, type RegisterRow } from './columns';
 import styles from './register.module.css';
-
-export interface TableSort {
-  key: SortKey;
-  order: 'asc' | 'desc';
-}
 
 const col = createColumnHelper<RegisterRow>();
 
@@ -28,7 +23,7 @@ const rowKey = (r: RegisterRow) =>
 export function RegisterTable(props: {
   rows: RegisterRow[];
   columns: readonly RegisterColumn[];
-  sort: TableSort;
+  sort: ListSort;
   onSort: (key: SortKey) => void;
 }) {
   const navigate = useNavigate();
@@ -47,7 +42,7 @@ export function RegisterTable(props: {
                 onClick={() => onSort(c.sortKey as SortKey)}
               >
                 {c.header}
-                {sort.key === c.sortKey ? (sort.order === 'desc' ? ' ↓' : ' ↑') : ''}
+                {sort.sort === c.sortKey ? (sort.order === 'desc' ? ' ↓' : ' ↑') : ''}
               </button>
             ) : (
               <ColumnHeaderLabel column={c} />

@@ -126,13 +126,29 @@ label from there — or is marked `derived` in the picker with a note saying why
 field. The two derived-and-unsourced columns are `Customer reference` and the summed totals, which
 is decisions 5 and 2 made visible in the UI rather than buried.
 
-Saved views, and export following the visible column set, are not built.
+Saved views are in (`views.ts`, `saved-views-store.ts`, `ReportBar.tsx`, `features/reports/`). A view
+is grain + columns + filters + sort + a name; the legal-entity selector is deliberately outside it. The
+three clean reports ship as built-in views, the "Reports" nav item lists them beside the user's own,
+and `?view=<id>` on the register URL opens one, so a report is a link. A built-in view can be opened
+and adjusted but not changed in place — adjustments are saved as the user's own. User views live in
+localStorage for the prototype (docs/architecture.md, decision 5). The Reports page also names the
+five requested reports that are not offered, with the reason, so the limitation is in the UI rather
+than in this document alone (principle #3).
+
+Export follows the view (`export-rows.ts`). Every column in the registry carries an `exportValue`
+beside its `render`, so the file is the visible columns in the visible order, at the visible grain,
+over the full filtered set in the on-screen sort. Field states export as their labels — never a
+blank or a zero — and a Currency column is added whenever an amount is written and the user has not
+chosen it. Declaration totals are only offered at declaration grain, so a goods-line file cannot
+repeat a header total on every line; that is what makes a line export safe to sum. The declaration
+detail page's export writes every column of the grain, since a single-declaration export is a full
+record rather than a view.
 
 ## Suggested order
 
-1. ~~Grain toggle plus catalogue-driven column picker.~~ Done. Export does not yet follow the view.
-2. Saved views, shipped with Declaration Summary, Declaration Line Overview and Order/Declaration
-   status preconfigured.
+1. ~~Grain toggle plus catalogue-driven column picker.~~ Done.
+2. ~~Saved views, shipped with Declaration Summary, Declaration Line Overview and Order/Declaration
+   status preconfigured; export follows the view.~~ Done.
 3. Take the entity-to-VAT-number mapping to the customer; VAT Reports follows once it exists.
 4. Settle the identifier question (decision 4 and 5) before committing to MCD or MDR.
 5. Tell the customer plainly that Intrastat and EC Sales are not derivable from declaration data.

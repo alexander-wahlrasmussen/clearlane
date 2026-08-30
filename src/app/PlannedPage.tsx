@@ -10,10 +10,6 @@ const COPY: Record<string, { title: string; desc: string }> = {
     title: 'Exceptions',
     desc: 'A worklist of declarations requiring investigation is planned for a later release.',
   },
-  reports: {
-    title: 'Reports',
-    desc: 'Scheduled and on-demand reporting is planned for a later release. Until then, use Export on the declaration register.',
-  },
 };
 
 export function PlannedPage() {

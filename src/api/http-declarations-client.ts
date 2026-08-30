@@ -8,9 +8,11 @@ import type {
   DeclarationsClient,
   GoodsLineRow,
   ListParams,
+  ListSort,
   Page,
   RegisterSummary,
 } from './declarations-client';
+import { DEFAULT_SORT } from './declarations-client';
 import type { Declaration } from '../domain/declaration';
 
 export class ApiError extends Error {
@@ -99,11 +101,20 @@ export class HttpDeclarationsClient implements DeclarationsClient {
     return mapDeclaration(await this.get<DeclarationDto>(`declarations/${encodeURIComponent(mrn)}`));
   }
 
-  async listAllDeclarations(f: DeclarationFilter): Promise<Declaration[]> {
-    const all: Declaration[] = [];
+  async listAllDeclarations(f: DeclarationFilter, sort: ListSort = DEFAULT_SORT): Promise<Declaration[]> {
+    return this.drain((page) => this.listDeclarations({ filter: f, ...sort, page, pageSize: 500 }));
+  }
+
+  async listAllGoodsLines(f: DeclarationFilter, sort: ListSort = DEFAULT_SORT): Promise<GoodsLineRow[]> {
+    return this.drain((page) => this.listGoodsLines({ filter: f, ...sort, page, pageSize: 500 }));
+  }
+
+  /** Walks every page of a listing; the contract caps pageSize at 500. */
+  private async drain<T>(fetchPage: (page: number) => Promise<Page<T>>): Promise<T[]> {
+    const all: T[] = [];
     let page = 1;
     for (;;) {
-      const res = await this.listDeclarations({ filter: f, sort: 'date', order: 'desc', page, pageSize: 500 });
+      const res = await fetchPage(page);
       all.push(...res.items);
       if (all.length >= res.total || res.items.length === 0) return all;
       page += 1;

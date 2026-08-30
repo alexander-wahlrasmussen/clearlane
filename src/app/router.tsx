@@ -5,6 +5,7 @@ import { AiShell } from '../features/ask/AiShell';
 import { AskPage } from '../features/ask/AskPage';
 import { AiRegisterPage } from '../features/ask/AiRegisterPage';
 import { RegisterPage } from '../features/register/RegisterPage';
+import { ReportsPage } from '../features/reports/ReportsPage';
 import { DeclarationPage } from '../features/declaration/DeclarationPage';
 
 /**
@@ -22,7 +23,15 @@ const indexRoute = createRoute({
 });
 
 const mvpRoute = createRoute({ getParentRoute: () => rootRoute, path: 'mvp', component: MvpShell });
-const registerRoute = createRoute({ getParentRoute: () => mvpRoute, path: '/', component: RegisterPage });
+const registerRoute = createRoute({
+  getParentRoute: () => mvpRoute,
+  path: '/',
+  component: RegisterPage,
+  /** `?view=<report id>` opens the register on a saved view — see features/register/views.ts. */
+  validateSearch: (search: Record<string, unknown>): { view?: string } =>
+    typeof search.view === 'string' && search.view ? { view: search.view } : {},
+});
+const reportsRoute = createRoute({ getParentRoute: () => mvpRoute, path: 'reports', component: ReportsPage });
 const declarationRoute = createRoute({
   getParentRoute: () => mvpRoute,
   path: 'declarations/$mrn',
@@ -44,7 +53,7 @@ const aiRegisterRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   indexRoute,
-  mvpRoute.addChildren([registerRoute, declarationRoute, plannedRoute]),
+  mvpRoute.addChildren([registerRoute, reportsRoute, declarationRoute, plannedRoute]),
   aiRoute.addChildren([askRoute, aiRegisterRoute]),
 ]);
 

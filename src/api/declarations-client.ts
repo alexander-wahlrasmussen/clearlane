@@ -29,6 +29,11 @@ export interface ListParams {
   pageSize: number;
 }
 
+/** Sort of a full-set read; defaults to newest first. */
+export type ListSort = Pick<ListParams, 'sort' | 'order'>;
+
+export const DEFAULT_SORT: ListSort = { sort: 'date', order: 'desc' };
+
 export interface Page<T> {
   items: T[];
   total: number;
@@ -81,5 +86,7 @@ export interface DeclarationsClient {
   /** Goods-line grain of the same filtered set. */
   listGoodsLines(params: ListParams): Promise<Page<GoodsLineRow>>;
   /** Full filtered set — used by export and the mock ask engine. */
-  listAllDeclarations(filter: DeclarationFilter): Promise<Declaration[]>;
+  listAllDeclarations(filter: DeclarationFilter, sort?: ListSort): Promise<Declaration[]>;
+  /** Full filtered set at goods-line grain, in the order the register shows it — used by export. */
+  listAllGoodsLines(filter: DeclarationFilter, sort?: ListSort): Promise<GoodsLineRow[]>;
 }
