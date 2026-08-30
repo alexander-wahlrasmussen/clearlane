@@ -36,7 +36,7 @@ const PAGE_SIZE = 15;
 const GRAINS: readonly Grain[] = ['declaration', 'line'];
 
 export function RegisterPage() {
-  const [entity] = useEntityFilter();
+  const [entity, setEntity] = useEntityFilter();
   const navigate = useNavigate();
   const { view: viewParam } = useSearch({ strict: false }) as { view?: string };
   const [savedViews, setSavedViews] = useSavedViews();
@@ -112,6 +112,11 @@ export function RegisterPage() {
     setState((s) => ({ ...s, ...p }));
     setPage(1);
   };
+  /** Reset and Clear all also return the legal-entity selector to all entities. */
+  const resetAll = () => {
+    patch(DEFAULT_REGISTER_STATE);
+    setEntity('all');
+  };
   const chips = activeChips(state, entity);
   const total = list.data?.total ?? 0;
   const rows: RegisterRow[] =
@@ -158,16 +163,23 @@ export function RegisterPage() {
   };
 
   const doExport = async (format: 'csv' | 'xlsx') => {
-    const all: RegisterRow[] =
-      grain === 'declaration'
-        ? (await client.listAllDeclarations(filter, sort)).map((d) => ({ declaration: d, line: null }))
-        : await client.listAllGoodsLines(filter, sort);
     const filename = activeView
       ? fileSlug(activeView.name)
       : grain === 'declaration'
         ? 'declarations-export'
         : 'goods-lines-export';
-    exportRows(all, columns, { format, filename, sheetName: GRAIN_LABEL[grain] });
+    try {
+      const all: RegisterRow[] =
+        grain === 'declaration'
+          ? (await client.listAllDeclarations(filter, sort)).map((d) => ({ declaration: d, line: null }))
+          : await client.listAllGoodsLines(filter, sort);
+      exportRows(all, columns, { format, filename, sheetName: GRAIN_LABEL[grain] });
+    } catch (e) {
+      // The dialog stays open so the user can retry; nothing was written.
+      console.error('Export failed', e);
+      toast('Export failed — no file was downloaded. Try again.');
+      return;
+    }
     setExportOpen(false);
     toast('Export ready — file downloaded');
   };
@@ -257,7 +269,7 @@ export function RegisterPage() {
               </option>
             ))}
           </select>
-          <button type="button" className={styles.resetBtn} onClick={() => patch(DEFAULT_REGISTER_STATE)}>
+          <button type="button" className={styles.resetBtn} onClick={resetAll}>
             Reset
           </button>
         </div>
@@ -314,14 +326,14 @@ export function RegisterPage() {
                     : ch.key === 'gapsOnly'
                       ? patch({ gapsOnly: false })
                       : ch.key === 'entity'
-                        ? undefined
+                        ? setEntity('all')
                         : patch({ [ch.key]: 'all' } as Partial<RegisterState>)
                 }
               >
                 {ch.label} <span className={styles.chipX}>✕</span>
               </button>
             ))}
-            <button type="button" className={styles.clearAll} onClick={() => patch(DEFAULT_REGISTER_STATE)}>
+            <button type="button" className={styles.clearAll} onClick={resetAll}>
               Clear all
             </button>
           </div>
@@ -334,7 +346,7 @@ export function RegisterPage() {
           <div className={styles.emptyBody}>
             Try widening the date range or removing a filter. Data begins 1 March 2026.
           </div>
-          <button type="button" className={styles.resetBtn} onClick={() => patch(DEFAULT_REGISTER_STATE)}>
+          <button type="button" className={styles.resetBtn} onClick={resetAll}>
             Clear all filters
           </button>
         </div>

@@ -52,6 +52,7 @@ export function ReportsPage() {
       <ReportTable title="Built-in reports" views={BUILT_IN_VIEWS} />
       <ReportTable
         title="Your reports"
+        intro="Saved in this browser only — they do not follow you to another device or to a colleague. In the product they would be kept with your account."
         views={saved}
         empty="No saved reports yet. Open the register, set it up the way you want and choose “Save as report”."
       />
@@ -75,10 +76,16 @@ export function ReportsPage() {
   );
 }
 
-function ReportTable(props: { title: string; views: readonly RegisterView[]; empty?: string }) {
+function ReportTable(props: {
+  title: string;
+  intro?: string;
+  views: readonly RegisterView[];
+  empty?: string;
+}) {
   return (
     <section className={styles.section}>
       <h2 className={styles.sectionTitle}>{props.title}</h2>
+      {props.intro && <p className={styles.sectionIntro}>{props.intro}</p>}
       {props.views.length === 0 ? (
         <div className={styles.empty}>{props.empty}</div>
       ) : (

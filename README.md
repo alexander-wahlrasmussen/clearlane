@@ -22,7 +22,7 @@ answers, plain British English).
 npm install
 npm run dev        # http://localhost:5173 — runs on synthetic data, no backend needed
 npm test           # unit tests (vitest)
-npm run test:e2e   # the two critical flows (playwright)
+npm run test:e2e   # the critical flows (playwright)
 npm run typecheck
 ```
 
@@ -54,6 +54,31 @@ e2e/                        Playwright: register→detail, ask→evidence
 - `src/ai/ask-engine.ts` — a model only ever turns a question into a structured
   `Interpretation`; `src/ai/answer-compute.ts` computes every number
   deterministically and emits the complete evidence list.
+
+## Preview deployment (for internal review)
+
+`.github/workflows/preview.yml` builds on every push to `main` and publishes
+`dist/` to the **public** repository `clearlane-preview`, which serves it on
+GitHub Pages at `https://alexander-wahlrasmussen.github.io/clearlane-preview/`.
+The source stays private; only the built bundle is published — the same bytes
+any visitor's browser receives. The site runs entirely on synthetic data with
+the mock Ask engine, so it needs no backend and no keys.
+
+One-time setup:
+
+1. Create the empty public repo `alexander-wahlrasmussen/clearlane-preview`.
+2. `ssh-keygen -t ed25519 -C preview-deploy -f preview-key -N ""`. Add
+   `preview-key.pub` to clearlane-preview → Settings → Deploy keys, ticking
+   *Allow write access*. Add the contents of `preview-key` to **this** repo →
+   Settings → Secrets → Actions as `PREVIEW_DEPLOY_KEY`. Delete both files.
+3. Push to `main` (or run the workflow manually). After the first publish, in
+   clearlane-preview → Settings → Pages set the source to branch `gh-pages`, root.
+4. Optional: set the repository variable `FEEDBACK_URL` here to point "Give
+   feedback" at a Teams channel or form instead of the default mailto.
+
+The build stamp (short commit) is shown in the prototype bar and on the landing
+page so feedback can name the build it was seen on. `BASE_PATH` makes the same
+build serve under a sub-path; locally it is `/`.
 
 ## Backend & platform assumptions
 

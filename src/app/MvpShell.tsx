@@ -11,6 +11,8 @@ import { useAuth } from '../auth/AuthContext';
 import { useScope } from '../api/queries';
 import { formatUtcTimestamp } from '../domain/dates';
 import { useToast } from './ToastContext';
+import { PrototypeBar } from './PrototypeBar';
+import { SurfaceSwitch } from './SurfaceSwitch';
 import styles from './shell.module.css';
 
 /** Selected legal entity — 'all' or an entity name. Shared by header and register. */
@@ -54,11 +56,13 @@ export function MvpShell() {
   return (
     <EntityContext.Provider value={entityState}>
       <div className={styles.appFrame}>
+        <PrototypeBar />
         <header className={styles.topBar}>
           <div className={styles.logoRow}>
             <div className={styles.logoMark} />
             <div className={styles.logoName}>Customs Insights</div>
           </div>
+          <SurfaceSwitch current="mvp" />
           <div className={styles.divider} />
           <select
             className={styles.entitySelect}

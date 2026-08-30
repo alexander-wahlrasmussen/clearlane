@@ -7,6 +7,8 @@ export interface AppConfig {
   askEngine: AskEngineKind;
   anthropicApiKey: string;
   anthropicModel: string;
+  /** Where "Give feedback" goes — a mailto:, a Teams channel, a form. */
+  feedbackUrl: string;
 }
 
 export function readConfig(): AppConfig {
@@ -18,5 +20,8 @@ export function readConfig(): AppConfig {
     askEngine: engine,
     anthropicApiKey: ((env.VITE_ANTHROPIC_API_KEY as string | undefined) ?? '').trim(),
     anthropicModel: ((env.VITE_ANTHROPIC_MODEL as string | undefined) ?? '').trim() || 'claude-opus-5',
+    feedbackUrl:
+      ((env.VITE_FEEDBACK_URL as string | undefined) ?? '').trim() ||
+      'mailto:alexander.wahlrasmussen@maersk.com?subject=Customs%20Insights%20prototype%20feedback',
   };
 }

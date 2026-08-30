@@ -105,3 +105,22 @@ test('reports open the register configured, and export follows the view', async 
   await expect(page.getByLabel('Report')).toHaveValue('');
   await expect(page).not.toHaveURL(/view=/);
 });
+
+/** The front door: what this is, and the switch between the two surfaces. */
+test('landing page explains the prototype and the surfaces switch both ways', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /One place for a customer/ })).toBeVisible();
+  await expect(page.getByText('Everything here is synthetic.')).toBeVisible();
+  await expect(page.getByText(/^Build [0-9a-f]{7}/)).toBeVisible();
+
+  await page.getByRole('link', { name: /Open the MVP/ }).click();
+  await expect(page.getByRole('heading', { name: 'Declarations' })).toBeVisible();
+  await expect(page.getByRole('note')).toContainText('Synthetic data');
+
+  await page.getByRole('navigation', { name: 'Product surface' }).getByRole('link', { name: 'AI concept' }).click();
+  await expect(page).toHaveURL(/\/ai$/);
+  await page.getByRole('navigation', { name: 'Product surface' }).getByRole('link', { name: 'MVP' }).click();
+  await expect(page).toHaveURL(/\/mvp$/);
+  await page.getByRole('link', { name: 'About this prototype' }).click();
+  await expect(page.getByText('Everything here is synthetic.')).toBeVisible();
+});

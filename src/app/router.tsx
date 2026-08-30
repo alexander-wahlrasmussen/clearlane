@@ -1,4 +1,5 @@
-import { createRootRoute, createRoute, createRouter, Outlet, redirect } from '@tanstack/react-router';
+import { createRootRoute, createRoute, createRouter, Outlet } from '@tanstack/react-router';
+import { LandingPage } from './LandingPage';
 import { MvpShell } from './MvpShell';
 import { PlannedPage } from './PlannedPage';
 import { AiShell } from '../features/ask/AiShell';
@@ -14,13 +15,8 @@ import { DeclarationPage } from '../features/declaration/DeclarationPage';
  */
 const rootRoute = createRootRoute({ component: () => <Outlet /> });
 
-const indexRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: '/',
-  beforeLoad: () => {
-    throw redirect({ to: '/mvp' });
-  },
-});
+/** The front door for reviewers — what this is and where to look. */
+const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: LandingPage });
 
 const mvpRoute = createRoute({ getParentRoute: () => rootRoute, path: 'mvp', component: MvpShell });
 const registerRoute = createRoute({
@@ -57,7 +53,8 @@ const routeTree = rootRoute.addChildren([
   aiRoute.addChildren([askRoute, aiRegisterRoute]),
 ]);
 
-export const router = createRouter({ routeTree });
+// basepath follows Vite's `base`, so the same build serves at / or under /repo-name/ (GitHub Pages).
+export const router = createRouter({ routeTree, basepath: import.meta.env.BASE_URL });
 
 declare module '@tanstack/react-router' {
   interface Register {

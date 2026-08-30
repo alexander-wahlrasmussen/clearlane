@@ -1,0 +1,136 @@
+.page {
+  min-height: 100vh;
+  background: var(--bg-app);
+  padding: 48px 24px 64px;
+}
+.wrap {
+  max-width: 820px;
+  margin: 0 auto;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.brandName {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 22px 0 0;
+  line-height: 1.2;
+}
+.lead {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: #3a3d40;
+  margin: 12px 0 0;
+  max-width: 700px;
+}
+.notice {
+  margin-top: 18px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--warning-ink);
+}
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 24px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  color: var(--ink);
+}
+.card:hover {
+  border-color: var(--accent);
+  text-decoration: none;
+  color: var(--ink);
+}
+.card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.cardKicker {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-label);
+}
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.cardBody {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  margin: 8px 0 14px;
+  flex: 1;
+}
+.cardCta {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+.h2 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 30px 0 8px;
+}
+.questions,
+.notes {
+  margin: 0;
+  padding-left: 22px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #3a3d40;
+}
+.questions li,
+.notes li {
+  margin-top: 6px;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.feedbackBtn {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 16px;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+.feedbackBtn:hover {
+  background: var(--accent-hover);
+  color: #fff;
+  text-decoration: none;
+}
+.build {
+  font-size: 12px;
+  color: var(--ink-faint);
+}

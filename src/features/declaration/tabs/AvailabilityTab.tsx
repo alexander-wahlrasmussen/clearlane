@@ -1,13 +1,17 @@
 import type { Declaration } from '../../../domain/declaration';
 import { formatUtcTimestamp } from '../../../domain/dates';
 import { useToast } from '../../../app/ToastContext';
+import { useScope } from '../../../api/queries';
 import { Card, KVGrid } from '../KV';
 import styles from '../declaration.module.css';
 
 export function AvailabilityTab({ d }: { d: Declaration }) {
   const toast = useToast();
+  const scope = useScope();
   const a = d.assurance;
-  const stale = !a.lastUpdatedAt.startsWith('2026-08-26');
+  // Stale = not touched by the most recent refresh, as the data scope reports it.
+  const refreshedDay = scope.data?.refreshedAt.slice(0, 10);
+  const stale = refreshedDay !== undefined && !a.lastUpdatedAt.startsWith(refreshedDay);
   const verified = a.verification === 'Verified';
   const clean = a.missing.length === 0 && verified;
 
@@ -17,7 +21,12 @@ export function AvailabilityTab({ d }: { d: Declaration }) {
         <KVGrid
           labelWidth={210}
           rows={[
-            ['In Customs Insights', `Yes — received from the ${d.countryName} customs filing`],
+            [
+              'In Customs Insights',
+              a.includedInInsights
+                ? `Yes — received from the ${d.countryName} customs filing`
+                : `No — received from the ${d.countryName} customs filing but not included in figures`,
+            ],
             ['Received', <span className="num">{formatUtcTimestamp(a.receivedAt)}</span>],
             ['Processed', <span className="num">{formatUtcTimestamp(a.processedAt)}</span>],
             [

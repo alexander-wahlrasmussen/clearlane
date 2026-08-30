@@ -1,0 +1,71 @@
+# Builds the prototype and publishes the static output to the public preview
+# repository, which serves it on GitHub Pages. The source stays in this private
+# repository; only the built bundle — what any visitor's browser receives
+# anyway — is published.
+#
+# One-time setup (see README "Preview deployment"):
+#   1. Create the public repo alexander-wahlrasmussen/clearlane-preview.
+#   2. Generate a deploy key pair; add the public key to clearlane-preview
+#      (Settings → Deploy keys, allow write) and the private key here as the
+#      secret PREVIEW_DEPLOY_KEY.
+#   3. In clearlane-preview, Settings → Pages → source: branch gh-pages, root.
+name: Preview
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: preview
+  cancel-in-progress: true
+
+env:
+  PREVIEW_REPO: alexander-wahlrasmussen/clearlane-preview
+  # Must match the preview repo name: the site is served under this path.
+  BASE_PATH: /clearlane-preview/
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    env:
+      # Publishing is skipped until the deploy key exists, so the rest still runs as CI.
+      HAS_DEPLOY_KEY: ${{ secrets.PREVIEW_DEPLOY_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end flows
+        run: npx playwright test
+
+      - name: Build
+        run: npm run build
+        env:
+          BASE_PATH: ${{ env.BASE_PATH }}
+          VITE_FEEDBACK_URL: ${{ vars.FEEDBACK_URL }}
+
+      - name: SPA fallback for deep links
+        # Pages has no rewrite rules; serving index.html as the 404 page lets
+        # /mvp?view=... and /mvp/declarations/<mrn> boot the app.
+        run: cp dist/index.html dist/404.html
+
+      - name: Publish to preview repository
+        if: env.HAS_DEPLOY_KEY == 'true'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          external_repository: ${{ env.PREVIEW_REPO }}
+          publish_branch: gh-pages
+          publish_dir: ./dist
+          force_orphan: true
+          commit_message: 'Preview build ${{ github.sha }}'

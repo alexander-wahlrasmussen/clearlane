@@ -3,6 +3,8 @@ import { useAuth } from '../../auth/AuthContext';
 import { useScope } from '../../api/queries';
 import { formatUtcTimestamp } from '../../domain/dates';
 import shell from '../../app/shell.module.css';
+import { PrototypeBar } from '../../app/PrototypeBar';
+import { SurfaceSwitch } from '../../app/SurfaceSwitch';
 import { AskSessionProvider, useAskSession } from './ask-session';
 import { EvidenceDrawer } from './EvidenceDrawer';
 import { DeclarationDrawer } from './DeclarationDrawer';
@@ -19,8 +21,8 @@ function AiHeader() {
       <div className={shell.logoRow}>
         <div className={shell.logoMark} />
         <div className={shell.logoName}>Customs Insights</div>
-        <span className={shell.conceptPill}>AI concept</span>
       </div>
+      <SurfaceSwitch current="ai" />
       <div className={shell.divider} />
       <nav className={shell.headerTabs}>
         <Link to="/ai" className={onAsk ? shell.headerTabActive : shell.headerTab}>
@@ -51,6 +53,7 @@ export function AiShell() {
   return (
     <AskSessionProvider>
       <div className={shell.appFrame}>
+        <PrototypeBar />
         <AiHeader />
         <main className={shell.main}>
           <Outlet />

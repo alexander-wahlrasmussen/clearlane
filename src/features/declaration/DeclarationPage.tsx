@@ -143,11 +143,17 @@ export function DeclarationPage() {
             const rows: RegisterRow[] = includeLines
               ? d.lines.map((line) => ({ declaration: d, line }))
               : [{ declaration: d, line: null }];
-            exportRows(rows, columnsForGrain(grain), {
-              format,
-              filename: `declaration-${fileSlug(d.mrn)}`,
-              sheetName: GRAIN_LABEL[grain],
-            });
+            try {
+              exportRows(rows, columnsForGrain(grain), {
+                format,
+                filename: `declaration-${fileSlug(d.mrn)}`,
+                sheetName: GRAIN_LABEL[grain],
+              });
+            } catch (e) {
+              console.error('Export failed', e);
+              toast('Export failed — no file was downloaded. Try again.');
+              return;
+            }
             setExportOpen(false);
             toast('Export ready — file downloaded');
           }}
