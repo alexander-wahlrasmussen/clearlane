@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { useNavigate } from '@tanstack/react-router';
 import { createColumnHelper, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 import type { ListSort, SortKey } from '../../api/declarations-client';
 import { ColumnHeaderLabel, type RegisterColumn, type RegisterRow } from './columns';
@@ -19,15 +18,18 @@ const rowKey = (r: RegisterRow) =>
  * columns.tsx, so the same table serves both grains. Only the first column is
  * sticky: which column comes first is now the user's choice, so a fixed pixel
  * offset for a second sticky column can no longer be assumed.
+ *
+ * Opening a row is the host's decision: the MVP navigates to the declaration
+ * page, the AI surface opens the same view in a drawer.
  */
 export function RegisterTable(props: {
   rows: RegisterRow[];
   columns: readonly RegisterColumn[];
   sort: ListSort;
   onSort: (key: SortKey) => void;
+  onOpen: (mrn: string) => void;
 }) {
-  const navigate = useNavigate();
-  const { sort, onSort, columns: selected } = props;
+  const { sort, onSort, columns: selected, onOpen: open } = props;
 
   const columns = useMemo(
     () =>
@@ -61,8 +63,6 @@ export function RegisterTable(props: {
     manualSorting: true,
     manualPagination: true,
   });
-
-  const open = (mrn: string) => navigate({ to: '/mvp/declarations/$mrn', params: { mrn } });
 
   return (
     <div className={styles.tableScroll}>

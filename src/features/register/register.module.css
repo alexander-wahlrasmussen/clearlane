@@ -256,6 +256,11 @@
 .chip:hover {
   background: #dce8f2;
 }
+/* The set an Ask answer handed over — a filter like the others, but from an answer. */
+.handoffChip {
+  composes: chip;
+  border-color: var(--accent);
+}
 .chipX {
   font-weight: 400;
 }

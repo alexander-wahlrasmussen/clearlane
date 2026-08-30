@@ -58,6 +58,7 @@ export class HttpDeclarationsClient implements DeclarationsClient {
       from: f.fromDate,
       search: f.search,
       withGapsOnly: f.withGapsOnly ? true : undefined,
+      mrns: f.mrns?.length ? f.mrns.join(',') : undefined,
     };
   }
 

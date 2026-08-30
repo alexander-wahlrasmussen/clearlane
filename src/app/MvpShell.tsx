@@ -1,28 +1,13 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-} from 'react';
+import { useState, type ReactNode } from 'react';
 import { Link, Outlet, useRouterState } from '@tanstack/react-router';
 import { useAuth } from '../auth/AuthContext';
 import { useScope } from '../api/queries';
 import { formatUtcTimestamp } from '../domain/dates';
 import { useToast } from './ToastContext';
+import { EntityProvider, EntitySelect } from './entity-context';
 import { PrototypeBar } from './PrototypeBar';
 import { SurfaceSwitch } from './SurfaceSwitch';
 import styles from './shell.module.css';
-
-/** Selected legal entity — 'all' or an entity name. Shared by header and register. */
-const EntityContext = createContext<['all' | string, Dispatch<SetStateAction<string>>] | null>(null);
-
-export function useEntityFilter() {
-  const ctx = useContext(EntityContext);
-  if (!ctx) throw new Error('MvpShell is missing above this component');
-  return ctx;
-}
 
 function NavIcon(props: { children: ReactNode }) {
   return (
@@ -38,7 +23,6 @@ const PLANNED_SECTIONS = [
 ];
 
 export function MvpShell() {
-  const entityState = useState<string>('all');
   const [userOpen, setUserOpen] = useState(false);
   const auth = useAuth();
   const scope = useScope();
@@ -54,7 +38,7 @@ export function MvpShell() {
   };
 
   return (
-    <EntityContext.Provider value={entityState}>
+    <EntityProvider>
       <div className={styles.appFrame}>
         <PrototypeBar />
         <header className={styles.topBar}>
@@ -64,19 +48,7 @@ export function MvpShell() {
           </div>
           <SurfaceSwitch current="mvp" />
           <div className={styles.divider} />
-          <select
-            className={styles.entitySelect}
-            aria-label="Customer legal entity"
-            value={entityState[0]}
-            onChange={(e) => entityState[1](e.target.value)}
-          >
-            <option value="all">{scope.data?.customerName ?? 'All'} — all entities</option>
-            {scope.data?.entities.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
+          <EntitySelect />
           <div className={styles.spacer} />
           <div className={styles.refreshed}>
             Last refreshed <strong>{scope.data ? formatUtcTimestamp(scope.data.refreshedAt) : '…'}</strong>
@@ -148,6 +120,6 @@ export function MvpShell() {
         </div>
         {userOpen && <div className={styles.backdrop} onClick={() => setUserOpen(false)} />}
       </div>
-    </EntityContext.Provider>
+    </EntityProvider>
   );
 }

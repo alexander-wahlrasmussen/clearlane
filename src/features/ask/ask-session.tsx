@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 import { useAskEngine } from '../../ai/ask-engine-context';
 import type { Interpretation, InterpretedQuestion } from '../../ai/ask-types';
+import type { RegisterHandoff } from '../register/RegisterPage';
 
 /**
  * State for one Ask session: the answer feed, report picks, and the
@@ -36,8 +37,8 @@ interface AskSessionValue {
   drawerMrn: string | null;
   openDrawer: (mrn: string) => void;
   closeDrawer: () => void;
-  handoff: EvidenceSelection | null;
-  setHandoff: (h: EvidenceSelection | null) => void;
+  handoff: RegisterHandoff | null;
+  setHandoff: (h: RegisterHandoff | null) => void;
 }
 
 const Ctx = createContext<AskSessionValue | null>(null);
@@ -49,7 +50,7 @@ export function AskSessionProvider(props: { children: ReactNode }) {
   const [reportOpen, setReportOpen] = useState(false);
   const [evidence, setEvidence] = useState<EvidenceSelection | null>(null);
   const [drawerMrn, setDrawerMrn] = useState<string | null>(null);
-  const [handoff, setHandoff] = useState<EvidenceSelection | null>(null);
+  const [handoff, setHandoff] = useState<RegisterHandoff | null>(null);
 
   const patchCard = useCallback((id: number, patch: Partial<AskCard>) => {
     setCards((cs) => cs.map((c) => (c.id === id ? { ...c, ...patch } : c)));

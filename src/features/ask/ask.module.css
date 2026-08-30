@@ -593,7 +593,8 @@
 }
 .drawerWide {
   composes: drawer;
-  width: 600px;
+  /* Hosts the full six-tab declaration view, so it needs the room the page has. */
+  width: min(1040px, 94vw);
   z-index: 61;
 }
 .drawerHead {
@@ -635,7 +636,8 @@
 .drawerBodyPad {
   flex: 1;
   overflow-y: auto;
-  padding: 18px 22px;
+  padding: 6px 22px 24px;
+  background: var(--bg);
 }
 .evidenceRow {
   display: flex;
@@ -688,33 +690,6 @@
 .drawerAction:hover {
   background: var(--accent-tint);
 }
-.drawerNote {
-  font-size: 11.5px;
-  color: var(--ink-faint);
-  margin-top: 10px;
-}
-.dwGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px 20px;
-}
-.dwLabel {
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-label);
-}
-.dwValue {
-  font-size: 12.5px;
-  margin-top: 2px;
-}
-.dwStrong {
-  font-size: 14px;
-  font-weight: 700;
-  margin-top: 2px;
-}
-
 /* Report modal */
 .modalOverlay {
   position: fixed;
@@ -819,104 +794,3 @@
   background: var(--accent-hover);
 }
 
-/* AI register */
-.regPage {
-  padding: 22px 26px 40px;
-}
-.regTitleRow {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.regTitle {
-  font-size: 21px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  margin: 0;
-}
-.regCount {
-  font-size: 12.5px;
-  color: var(--ink-muted);
-  font-variant-numeric: tabular-nums;
-}
-.regFilters {
-  margin-top: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.regSearch {
-  height: 31px;
-  flex: 1;
-  min-width: 220px;
-  max-width: 340px;
-  padding: 0 10px;
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  font-size: 12.5px;
-}
-.regSelect {
-  height: 31px;
-  padding: 0 8px;
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font: inherit;
-  font-size: 12.5px;
-}
-.handoffChip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--accent-tint);
-  color: var(--accent-ink);
-  border: 1px solid var(--accent-tint-border);
-  border-radius: 12px;
-  padding: 3px 10px;
-  font-size: 11.5px;
-  font-weight: 600;
-}
-.regTableCard {
-  margin-top: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.regTable {
-  border-collapse: collapse;
-  width: 100%;
-}
-.regTable th {
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-label);
-  text-align: left;
-  padding: 8px 10px;
-  white-space: nowrap;
-}
-.regTable td {
-  padding: 7px 10px;
-  border-bottom: 1px solid var(--border-row);
-  font-size: 12.5px;
-  white-space: nowrap;
-}
-.regTable th[data-align='right'],
-.regTable td[data-align='right'] {
-  text-align: right;
-}
-.regNote {
-  font-size: 11.5px;
-  color: var(--ink-faint);
-  margin-top: 10px;
-}

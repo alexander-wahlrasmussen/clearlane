@@ -11,7 +11,7 @@ import type { ListSort, SortKey } from '../../api/declarations-client';
 import { formatCount } from '../../domain/money';
 import { typeLabel, DECLARATION_STATUSES } from '../../domain/declaration';
 import { LoadingScreen, ErrorScreen } from '../../app/StatusScreens';
-import { useEntityFilter } from '../../app/MvpShell';
+import { useEntityFilter } from '../../app/entity-context';
 import { useToast } from '../../app/ToastContext';
 import { ExportDialog, EXPORT_NOTE } from '../export/ExportDialog';
 import { exportRows, fileSlug } from '../export/export-service';
@@ -35,17 +35,46 @@ import styles from './register.module.css';
 const PAGE_SIZE = 15;
 const GRAINS: readonly Grain[] = ['declaration', 'line'];
 
-export function RegisterPage() {
+/**
+ * A set handed to the register from an Ask answer: the exact declarations an
+ * answer was computed from, or the view an extract answer is showing.
+ */
+export interface RegisterHandoff {
+  title: string;
+  mrns?: readonly string[];
+  view?: ViewConfig;
+}
+
+export interface RegisterPageProps {
+  /** What opening a row does — the MVP navigates, the AI surface opens its drawer. */
+  onOpenDeclaration: (mrn: string) => void;
+  /**
+   * Whether reports are chosen from a selector here. The MVP's way in; the AI
+   * surface reaches the same reports by asking for them, so it hides this.
+   */
+  reportBar: boolean;
+  handoff?: RegisterHandoff | null;
+  onClearHandoff?: () => void;
+}
+
+/**
+ * The declaration register. One component hosted by both surfaces, so there is
+ * one set of filters, columns, sort and export — never a second, lesser register.
+ */
+export function RegisterPage(props: RegisterPageProps) {
+  const { onOpenDeclaration, reportBar, handoff } = props;
   const [entity, setEntity] = useEntityFilter();
   const navigate = useNavigate();
   const { view: viewParam } = useSearch({ strict: false }) as { view?: string };
   const [savedViews, setSavedViews] = useSavedViews();
   const allViews = useMemo(() => [...BUILT_IN_VIEWS, ...savedViews], [savedViews]);
 
-  // A report named in the URL seeds the initial state, so the register opens
-  // on it without first fetching the defaults.
-  const initialView = findView(allViews, viewParam);
-  const [activeId, setActiveId] = useState<string | null>(initialView?.id ?? null);
+  // A report named in the URL, or a view handed over from an answer, seeds the
+  // initial state so the register opens on it without first fetching the defaults.
+  const initialView = (reportBar ? findView(allViews, viewParam) : undefined) ?? handoff?.view;
+  const [activeId, setActiveId] = useState<string | null>(
+    reportBar ? (findView(allViews, viewParam)?.id ?? null) : null,
+  );
   const [state, setState] = useState<RegisterState>(initialView?.filter ?? DEFAULT_REGISTER_STATE);
   const [sort, setSort] = useState<ListSort>(initialView?.sort ?? { sort: 'date', order: 'desc' });
   const [page, setPage] = useState(1);
@@ -59,7 +88,7 @@ export function RegisterPage() {
   const toast = useToast();
   const client = useDeclarationsClient();
 
-  const filter = toFilter(state, entity);
+  const filter = { ...toFilter(state, entity), ...(handoff?.mrns ? { mrns: handoff.mrns } : {}) };
   const params = { filter, ...sort, page, pageSize: PAGE_SIZE };
   const scope = useScope();
   const declarations = useDeclarationsList(params, grain === 'declaration');
@@ -82,6 +111,7 @@ export function RegisterPage() {
   // The URL is the way in to a report (from the Reports page, a bookmark, a
   // shared link). Selecting one here writes the URL, and this applies it.
   useEffect(() => {
+    if (!reportBar) return;
     if (!viewParam) {
       setActiveId(null);
       return;
@@ -94,7 +124,18 @@ export function RegisterPage() {
     }
     setActiveId(v.id);
     applyView(v);
-  }, [viewParam, allViews]);
+  }, [reportBar, viewParam, allViews]);
+
+  // A hand-off from an answer shows that answer's rows: its view as it was, or
+  // its evidence set with the filters cleared so every declaration in it is shown.
+  useEffect(() => {
+    if (!handoff) return;
+    if (handoff.view) applyView(handoff.view);
+    else {
+      setState(DEFAULT_REGISTER_STATE);
+      setPage(1);
+    }
+  }, [handoff]);
 
   if (scope.isPending || (list.isPending && !list.data)) return <LoadingScreen />;
   if (scope.isError || list.isError) {
@@ -116,6 +157,7 @@ export function RegisterPage() {
   const resetAll = () => {
     patch(DEFAULT_REGISTER_STATE);
     setEntity('all');
+    props.onClearHandoff?.();
   };
   const chips = activeChips(state, entity);
   const total = list.data?.total ?? 0;
@@ -128,7 +170,7 @@ export function RegisterPage() {
   const shownPage = Math.min(page, pages);
 
   const current: ViewConfig = { grain, columns: columnIds[grain], filter: state, sort };
-  const activeView = findView(allViews, activeId);
+  const activeView = reportBar ? findView(allViews, activeId) : undefined;
   const modified = activeView ? !viewMatches(activeView, current) : false;
 
   const selectView = (id: string | null) =>
@@ -165,9 +207,11 @@ export function RegisterPage() {
   const doExport = async (format: 'csv' | 'xlsx') => {
     const filename = activeView
       ? fileSlug(activeView.name)
-      : grain === 'declaration'
-        ? 'declarations-export'
-        : 'goods-lines-export';
+      : handoff
+        ? fileSlug(handoff.title)
+        : grain === 'declaration'
+          ? 'declarations-export'
+          : 'goods-lines-export';
     try {
       const all: RegisterRow[] =
         grain === 'declaration'
@@ -273,17 +317,19 @@ export function RegisterPage() {
             Reset
           </button>
         </div>
-        <ReportBar
-          builtIn={BUILT_IN_VIEWS}
-          saved={savedViews}
-          active={activeView}
-          modified={modified}
-          onSelect={selectView}
-          onSaveAs={saveAs}
-          onSaveChanges={saveChanges}
-          onDiscard={() => activeView && applyView(activeView)}
-          onDelete={deleteView}
-        />
+        {reportBar && (
+          <ReportBar
+            builtIn={BUILT_IN_VIEWS}
+            saved={savedViews}
+            active={activeView}
+            modified={modified}
+            onSelect={selectView}
+            onSaveAs={saveAs}
+            onSaveChanges={saveChanges}
+            onDiscard={() => activeView && applyView(activeView)}
+            onDelete={deleteView}
+          />
+        )}
         <div className={styles.viewRow}>
           <span className={styles.viewLabel}>Show</span>
           <div className={styles.grainToggle} role="group" aria-label="Row grain">
@@ -311,9 +357,19 @@ export function RegisterPage() {
             onChange={(ids) => setColumnIds((c) => ({ ...c, [grain]: ids }))}
           />
         </div>
-        {chips.length > 0 && (
+        {(chips.length > 0 || handoff) && (
           <div className={styles.chipsRow}>
             <span className={styles.chipsLabel}>Active filters:</span>
+            {handoff && (
+              <button
+                type="button"
+                title="Show all declarations"
+                className={styles.handoffChip}
+                onClick={props.onClearHandoff}
+              >
+                From answer: {handoff.title} <span className={styles.chipX}>✕</span>
+              </button>
+            )}
             {chips.map((ch) => (
               <button
                 key={ch.key}
@@ -352,7 +408,7 @@ export function RegisterPage() {
         </div>
       ) : (
         <div className={styles.tableCard}>
-          <RegisterTable rows={rows} columns={columns} sort={sort} onSort={onSort} />
+          <RegisterTable rows={rows} columns={columns} sort={sort} onSort={onSort} onOpen={onOpenDeclaration} />
           <div className={styles.pagination}>
             <div className={`${styles.pageInfo} num`}>
               Showing {(shownPage - 1) * PAGE_SIZE + 1}–{Math.min(shownPage * PAGE_SIZE, total)} of{' '}
@@ -390,6 +446,7 @@ export function RegisterPage() {
             ...(activeView
               ? [['Report', modified ? `${activeView.name} (modified)` : activeView.name] as [string, string]]
               : []),
+            ...(handoff ? [['From answer', handoff.title] as [string, string]] : []),
             ['Legal entity', entity === 'all' ? `${scope.data?.customerName ?? ''} — all entities` : entity],
             ['Date range', PERIOD_LABEL[state.period]],
             ['Countries', state.country === 'all' ? `All ${scope.data?.countries.length ?? 0} countries` : (scope.data?.countries.find((c) => c.code === state.country)?.name ?? state.country)],

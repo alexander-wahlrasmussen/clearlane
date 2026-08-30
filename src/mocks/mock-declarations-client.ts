@@ -38,8 +38,10 @@ export class MockDeclarationsClient implements DeclarationsClient {
 
   private applyFilter(f: DeclarationFilter): Declaration[] {
     const q = f.search?.trim().toLowerCase();
+    const mrns = f.mrns ? new Set(f.mrns) : null;
     return this.declarations.filter(
       (d) =>
+        (!mrns || mrns.has(d.mrn)) &&
         (!f.fromDate || d.clearanceDate >= f.fromDate) &&
         (!f.entity || d.legalEntity === f.entity) &&
         (!f.country || d.countryCode === f.country) &&

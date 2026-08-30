@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/AuthContext';
 import { useScope } from '../../api/queries';
 import { formatUtcTimestamp } from '../../domain/dates';
 import shell from '../../app/shell.module.css';
+import { EntityProvider, EntitySelect } from '../../app/entity-context';
 import { PrototypeBar } from '../../app/PrototypeBar';
 import { SurfaceSwitch } from '../../app/SurfaceSwitch';
 import { AskSessionProvider, useAskSession } from './ask-session';
@@ -23,6 +24,8 @@ function AiHeader() {
         <div className={shell.logoName}>Customs Insights</div>
       </div>
       <SurfaceSwitch current="ai" />
+      <div className={shell.divider} />
+      <EntitySelect />
       <div className={shell.divider} />
       <nav className={shell.headerTabs}>
         <Link to="/ai" className={onAsk ? shell.headerTabActive : shell.headerTab}>
@@ -51,17 +54,19 @@ function AiHeader() {
 
 export function AiShell() {
   return (
-    <AskSessionProvider>
-      <div className={shell.appFrame}>
-        <PrototypeBar />
-        <AiHeader />
-        <main className={shell.main}>
-          <Outlet />
-        </main>
-        <EvidenceDrawer />
-        <DeclarationDrawer />
-        <ReportDraftModal />
-      </div>
-    </AskSessionProvider>
+    <EntityProvider>
+      <AskSessionProvider>
+        <div className={shell.appFrame}>
+          <PrototypeBar />
+          <AiHeader />
+          <main className={shell.main}>
+            <Outlet />
+          </main>
+          <EvidenceDrawer />
+          <DeclarationDrawer />
+          <ReportDraftModal />
+        </div>
+      </AskSessionProvider>
+    </EntityProvider>
   );
 }

@@ -114,3 +114,21 @@ describe('MockDeclarationsClient.listAllGoodsLines', () => {
     expect([...dates].sort()).toEqual(dates);
   });
 });
+
+describe('MockDeclarationsClient filter by MRN set', () => {
+  it('returns exactly the named declarations, combined with the other filters', async () => {
+    const all = await client.listAllDeclarations({});
+    const picked = all.slice(0, 5).map((d) => d.mrn);
+    const rows = await client.listAllDeclarations({ mrns: picked });
+    expect(rows.map((d) => d.mrn).sort()).toEqual([...picked].sort());
+
+    const imports = await client.listAllDeclarations({ mrns: picked, type: 'import' });
+    expect(imports.every((d) => d.type === 'import' && picked.includes(d.mrn))).toBe(true);
+
+    const lines = await client.listGoodsLines({ ...base, filter: { mrns: picked }, page: 1 });
+    expect(lines.total).toBe(all.slice(0, 5).reduce((s, d) => s + d.lines.length, 0));
+
+    const summary = await client.getRegisterSummary({ mrns: picked });
+    expect(summary.total).toBe(5);
+  });
+});

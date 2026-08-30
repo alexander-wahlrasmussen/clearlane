@@ -1,4 +1,5 @@
 import { useAllDeclarations, useScope } from '../../api/queries';
+import { useEntityScope } from '../../app/entity-context';
 import { useAskSession } from './ask-session';
 import { buildReportSections, downloadReportHtml } from './report';
 import { useToast } from '../../app/ToastContext';
@@ -7,7 +8,7 @@ import styles from './ask.module.css';
 export function ReportDraftModal() {
   const session = useAskSession();
   const scope = useScope();
-  const decls = useAllDeclarations({}, session.reportOpen);
+  const decls = useAllDeclarations(useEntityScope(), session.reportOpen);
   const toast = useToast();
   if (!session.reportOpen || !decls.data || !scope.data) return null;
 

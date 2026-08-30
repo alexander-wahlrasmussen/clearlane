@@ -17,6 +17,11 @@ export interface DeclarationFilter {
   search?: string;
   /** Only declarations with a required field missing or values unverified. */
   withGapsOnly?: boolean;
+  /**
+   * Only these declarations — the exact evidence set an Ask answer was computed
+   * from, opened in the register. Combines with the other filters.
+   */
+  mrns?: readonly string[];
 }
 
 export type SortKey = 'date' | 'customsValue' | 'duty' | 'vat';

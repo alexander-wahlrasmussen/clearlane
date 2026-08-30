@@ -1,5 +1,6 @@
 import { useNavigate } from '@tanstack/react-router';
 import { useAllDeclarations } from '../../api/queries';
+import { useEntityScope } from '../../app/entity-context';
 import { STATUS_DOT, typeLabel } from '../../domain/declaration';
 import { formatIsoDate } from '../../domain/dates';
 import { eurEquivalentMinor, formatEurMinor } from '../../domain/money';
@@ -10,7 +11,7 @@ import styles from './ask.module.css';
 export function EvidenceDrawer() {
   const session = useAskSession();
   const navigate = useNavigate();
-  const decls = useAllDeclarations({}, session.evidence !== null);
+  const decls = useAllDeclarations(useEntityScope(), session.evidence !== null);
   if (!session.evidence) return null;
   const { title, mrns } = session.evidence;
   const rows = (decls.data ?? [])

@@ -5,7 +5,7 @@ import { PlannedPage } from './PlannedPage';
 import { AiShell } from '../features/ask/AiShell';
 import { AskPage } from '../features/ask/AskPage';
 import { AiRegisterPage } from '../features/ask/AiRegisterPage';
-import { RegisterPage } from '../features/register/RegisterPage';
+import { MvpRegisterPage } from '../features/register/MvpRegisterPage';
 import { ReportsPage } from '../features/reports/ReportsPage';
 import { DeclarationPage } from '../features/declaration/DeclarationPage';
 
@@ -22,7 +22,7 @@ const mvpRoute = createRoute({ getParentRoute: () => rootRoute, path: 'mvp', com
 const registerRoute = createRoute({
   getParentRoute: () => mvpRoute,
   path: '/',
-  component: RegisterPage,
+  component: MvpRegisterPage,
   /** `?view=<report id>` opens the register on a saved view — see features/register/views.ts. */
   validateSearch: (search: Record<string, unknown>): { view?: string } =>
     typeof search.view === 'string' && search.view ? { view: search.view } : {},

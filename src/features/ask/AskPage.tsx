@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAllDeclarations, useScope } from '../../api/queries';
+import { useEntityScope } from '../../app/entity-context';
 import { LoadingScreen, ErrorScreen } from '../../app/StatusScreens';
+import { DataScopePanel } from '../register/DataScopePanel';
 import { useAskSession } from './ask-session';
 import { AnswerCard } from './AnswerCard';
 import { Briefing } from './Briefing';
@@ -19,7 +21,7 @@ export function AskPage() {
   const [question, setQuestion] = useState('');
   const session = useAskSession();
   const scope = useScope();
-  const decls = useAllDeclarations({});
+  const decls = useAllDeclarations(useEntityScope());
 
   if (scope.isPending || decls.isPending) return <LoadingScreen />;
   if (scope.isError || decls.isError) {
@@ -72,6 +74,8 @@ export function AskPage() {
           computed directly from your declaration data. Nothing is estimated.
         </div>
       </div>
+
+      <DataScopePanel scope={scope.data} />
 
       <Briefing decls={decls.data} asOf={asOf} refreshedAt={scope.data.refreshedAt} />
 

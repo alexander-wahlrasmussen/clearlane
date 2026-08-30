@@ -41,6 +41,7 @@ paths:
         - { name: from, in: query, schema: { type: string, format: date } }
         - { name: search, in: query, schema: { type: string }, description: MRN or customer reference substring }
         - { name: withGapsOnly, in: query, schema: { type: boolean } }
+        - { name: mrns, in: query, schema: { type: string }, description: Comma-separated MRNs — only these declarations (an Ask answer's evidence set) }
         - { name: sort, in: query, schema: { type: string, enum: [date, customsValue, duty, vat] } }
         - { name: order, in: query, schema: { type: string, enum: [asc, desc] } }
         - { name: page, in: query, schema: { type: integer, minimum: 1 } }
@@ -69,6 +70,7 @@ paths:
         - { in: query, name: from, schema: { type: string, format: date } }
         - { in: query, name: search, schema: { type: string } }
         - { in: query, name: withGapsOnly, schema: { type: boolean } }
+        - { in: query, name: mrns, schema: { type: string }, description: Comma-separated MRNs — only these declarations }
         - { in: query, name: sort, schema: { type: string, enum: [date, customsValue, duty, vat] } }
         - { in: query, name: order, schema: { type: string, enum: [asc, desc] } }
         - { in: query, name: page, schema: { type: integer, minimum: 1 } }
