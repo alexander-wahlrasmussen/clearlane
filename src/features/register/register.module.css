@@ -1,5 +1,9 @@
 .page {
   padding: 22px 26px 40px;
+  /* Cap the register on very wide monitors — five cards and a full-width
+     table stretched across 4K stop being scannable. */
+  max-width: 1680px;
+  margin: 0 auto;
 }
 .titleRow {
   display: flex;
@@ -572,4 +576,20 @@
 .resetBtnSmall {
   composes: resetBtn;
   height: 29px;
+}
+
+/* ---- compact widths (below 1024px) -------------------------------------- */
+@media (max-width: 1023px) {
+  .cards {
+    grid-template-columns: 1fr 1fr;
+  }
+  .cards > :first-child {
+    grid-column: 1 / -1;
+  }
+  .scopeDetails {
+    grid-template-columns: 1fr 1fr;
+  }
+  .scopeDetails > :last-child {
+    grid-column: 1 / -1;
+  }
 }

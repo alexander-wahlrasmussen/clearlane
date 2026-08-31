@@ -89,14 +89,14 @@ export function MvpShell() {
               <NavIcon>
                 <path d="M2 4h12M2 8h12M2 12h8" />
               </NavIcon>
-              Declarations
+              <span className={styles.navLabel}>Declarations</span>
             </Link>
             <Link to="/mvp/reports" className={onReports ? styles.navBtnActive : styles.navBtn}>
               <NavIcon>
                 <rect x="3" y="2" width="10" height="12" rx="1" />
                 <path d="M6 6h4M6 9h4" />
               </NavIcon>
-              Reports
+              <span className={styles.navLabel}>Reports</span>
             </Link>
             <div className={styles.navSection}>Planned</div>
             {PLANNED_SECTIONS.map((s) => (
@@ -109,7 +109,7 @@ export function MvpShell() {
                 }
               >
                 <NavIcon>{s.icon}</NavIcon>
-                {s.label}
+                <span className={styles.navLabel}>{s.label}</span>
                 <span className={styles.plannedPill}>Planned</span>
               </Link>
             ))}

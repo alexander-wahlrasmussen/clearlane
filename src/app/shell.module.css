@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   background: var(--bg-app);
-  min-width: 1024px;
+  min-width: 768px;
   overflow: hidden;
 }
 .topBar {
@@ -444,4 +444,57 @@
 .surfaceBtnActive:hover {
   background: var(--accent);
   color: #fff;
+}
+
+/* ---- compact widths --------------------------------------------------------
+   Below 1024px the shell tightens rather than breaks: the side nav collapses
+   to an icon rail (labels stay for screen readers), the top bar drops its
+   ornaments, and below 880px the refreshed timestamp too — it remains on the
+   register's data-scope panel and the Ask briefing. The app floor is 768px;
+   phone layouts are deliberately out of scope (no approved design). */
+.navLabel {
+  white-space: nowrap;
+}
+@media (max-width: 1023px) {
+  .topBar {
+    gap: 10px;
+    padding: 0 14px;
+  }
+  .logoName,
+  .divider {
+    display: none;
+  }
+  .entitySelect {
+    max-width: 180px;
+  }
+  .sideNav {
+    width: auto;
+    padding: 14px 7px;
+  }
+  .navBtn {
+    justify-content: center;
+    padding: 9px 10px;
+  }
+  .navLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+  .plannedPill {
+    display: none;
+  }
+  .navSection {
+    font-size: 0;
+    padding: 0;
+    margin: 10px 6px 2px;
+    border-top: 1px solid var(--border-2);
+  }
+}
+@media (max-width: 879px) {
+  .refreshed {
+    display: none;
+  }
 }
