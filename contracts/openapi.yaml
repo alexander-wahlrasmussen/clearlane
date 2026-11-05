@@ -39,6 +39,7 @@ paths:
         - { name: type, in: query, schema: { type: string, enum: [import, export, transit] } }
         - { name: status, in: query, schema: { type: string } }
         - { name: from, in: query, schema: { type: string, format: date } }
+        - { name: to, in: query, schema: { type: string, format: date } }
         - { name: search, in: query, schema: { type: string }, description: MRN or customer reference substring }
         - { name: withGapsOnly, in: query, schema: { type: boolean } }
         - { name: mrns, in: query, schema: { type: string }, description: Comma-separated MRNs — only these declarations (an Ask answer's evidence set) }
@@ -68,6 +69,7 @@ paths:
         - { in: query, name: type, schema: { type: string, enum: [import, export, transit] } }
         - { in: query, name: status, schema: { type: string } }
         - { in: query, name: from, schema: { type: string, format: date } }
+        - { in: query, name: to, schema: { type: string, format: date } }
         - { in: query, name: search, schema: { type: string } }
         - { in: query, name: withGapsOnly, schema: { type: boolean } }
         - { in: query, name: mrns, schema: { type: string }, description: Comma-separated MRNs — only these declarations }

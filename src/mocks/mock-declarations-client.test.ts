@@ -36,6 +36,20 @@ describe('MockDeclarationsClient.listGoodsLines', () => {
     expect(first.total).toBeGreaterThan(declarationCount);
   });
 
+  it('applies inclusive start and end dates to declaration filters', async () => {
+    const fromDate = '2026-04-01';
+    const toDate = '2026-04-30';
+    const rows = await client.listAllDeclarations({ fromDate, toDate });
+
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((row) => row.clearanceDate >= fromDate && row.clearanceDate <= toDate)).toBe(true);
+    expect(rows.length).toBe(
+      (await client.listAllDeclarations({})).filter(
+        (row) => row.clearanceDate >= fromDate && row.clearanceDate <= toDate,
+      ).length,
+    );
+  });
+
   it('paginates without dropping or duplicating a line', async () => {
     const rows = await allPages(base);
     expect(rows.length).toBe(lineCount);

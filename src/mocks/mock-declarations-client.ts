@@ -43,6 +43,7 @@ export class MockDeclarationsClient implements DeclarationsClient {
       (d) =>
         (!mrns || mrns.has(d.mrn)) &&
         (!f.fromDate || d.clearanceDate >= f.fromDate) &&
+        (!f.toDate || d.clearanceDate <= f.toDate) &&
         (!f.entity || d.legalEntity === f.entity) &&
         (!f.country || d.countryCode === f.country) &&
         (!f.type || d.type === f.type) &&

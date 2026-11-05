@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useDeclarationsList, useGoodsLinesList, useRegisterSummary, useScope } from '../../api/queries';
 import type { ListSort, SortKey } from '../../api/declarations-client';
 import { formatCount } from '../../domain/money';
+import { formatIsoDate } from '../../domain/dates';
 import { typeLabel, DECLARATION_STATUSES } from '../../domain/declaration';
 import { LoadingScreen, ErrorScreen } from '../../app/StatusScreens';
 import { useEntityFilter } from '../../app/entity-context';
@@ -19,6 +20,8 @@ import {
 } from './register-state';
 import { SummaryCards } from './SummaryCards';
 import { DataScopePanel } from './DataScopePanel';
+import { DeclarationTrend } from './DeclarationTrend';
+import { monthEndDate } from './declaration-trend';
 import { RegisterTable } from './DeclarationsTable';
 import { ColumnPicker } from './ColumnPicker';
 import { Pagination } from './Pagination';
@@ -74,6 +77,7 @@ export function RegisterPage(props: RegisterPageProps) {
   const [state, setState] = useState<RegisterState>(initialView?.filter ?? DEFAULT_REGISTER_STATE);
   const [sort, setSort] = useState<ListSort>(initialView?.sort ?? { sort: 'date', order: 'desc' });
   const [page, setPage] = useState(1);
+  const [trendMonth, setTrendMonth] = useState<string | null>(null);
   const [grain, setGrain] = useState<Grain>(initialView?.grain ?? 'declaration');
   const [columnIds, setColumnIds] = useState<Record<Grain, readonly string[]>>({
     declaration: DEFAULT_COLUMNS.declaration,
@@ -84,7 +88,11 @@ export function RegisterPage(props: RegisterPageProps) {
   const toast = useToast();
   const exportView = useViewExport();
 
-  const filter = { ...toFilter(state, entity), ...(handoff?.mrns ? { mrns: handoff.mrns } : {}) };
+  const filter = {
+    ...toFilter(state, entity),
+    ...(trendMonth ? { fromDate: trendMonth, toDate: monthEndDate(trendMonth) } : {}),
+    ...(handoff?.mrns ? { mrns: handoff.mrns } : {}),
+  };
   const params = { filter, ...sort, page, pageSize: PAGE_SIZE };
   const scope = useScope();
   const declarations = useDeclarationsList(params, grain === 'declaration');
@@ -98,6 +106,7 @@ export function RegisterPage(props: RegisterPageProps) {
 
   const applyView = (v: ViewConfig) => {
     setState(v.filter);
+    setTrendMonth(null);
     setGrain(v.grain);
     setColumnIds((c) => ({ ...c, [v.grain]: v.columns }));
     setSort(v.sort);
@@ -129,6 +138,7 @@ export function RegisterPage(props: RegisterPageProps) {
     if (handoff.view) applyView(handoff.view);
     else {
       setState(DEFAULT_REGISTER_STATE);
+      setTrendMonth(null);
       setPage(1);
     }
   }, [handoff]);
@@ -152,6 +162,7 @@ export function RegisterPage(props: RegisterPageProps) {
   /** Reset and Clear all also return the legal-entity selector to all entities. */
   const resetAll = () => {
     patch(DEFAULT_REGISTER_STATE);
+    setTrendMonth(null);
     setEntity('all');
     props.onClearHandoff?.();
   };
@@ -165,7 +176,7 @@ export function RegisterPage(props: RegisterPageProps) {
 
   const current: ViewConfig = { grain, columns: columnIds[grain], filter: state, sort };
   const activeView = reportBar ? findView(allViews, activeId) : undefined;
-  const modified = activeView ? !viewMatches(activeView, current) : false;
+  const modified = activeView ? trendMonth !== null || !viewMatches(activeView, current) : false;
 
   const selectView = (id: string | null) =>
     void navigate({ to: '/mvp', search: id ? { view: id } : {}, replace: true });
@@ -237,6 +248,21 @@ export function RegisterPage(props: RegisterPageProps) {
         />
       )}
 
+      {scope.data && !handoff && (
+        <DeclarationTrend
+          filter={toFilter(state, entity)}
+          scope={scope.data}
+          selectedMonth={trendMonth}
+          onSelectMonth={(month) => {
+            setTrendMonth(month);
+            setState((current) => ({ ...current, search: '', gapsOnly: false }));
+            setGrain('declaration');
+            setPage(1);
+            props.onClearHandoff?.();
+          }}
+        />
+      )}
+
       <div className={styles.filterCard}>
         <div className={styles.filterRow}>
           <input
@@ -248,10 +274,22 @@ export function RegisterPage(props: RegisterPageProps) {
           />
           <select
             className={styles.select}
-            value={state.period}
-            onChange={(e) => patch({ period: e.target.value as RegisterState['period'] })}
+            value={trendMonth ? 'selected-month' : state.period}
+            onChange={(e) => {
+              setTrendMonth(null);
+              patch({ period: e.target.value as RegisterState['period'] });
+            }}
             aria-label="Date range"
           >
+            {trendMonth && (
+              <option value="selected-month">
+                {new Intl.DateTimeFormat('en-GB', {
+                  month: 'long',
+                  year: 'numeric',
+                  timeZone: 'UTC',
+                }).format(new Date(`${trendMonth}T00:00:00Z`))} — selected month
+              </option>
+            )}
             {(Object.keys(PERIOD_LABEL) as RegisterState['period'][]).map((p) => (
               <option key={p} value={p}>
                 {PERIOD_LABEL[p].replace(/ \(.*\)/, '')}
@@ -339,7 +377,7 @@ export function RegisterPage(props: RegisterPageProps) {
             onChange={(ids) => setColumnIds((c) => ({ ...c, [grain]: ids }))}
           />
         </div>
-        {(chips.length > 0 || handoff) && (
+        {(chips.length > 0 || handoff || trendMonth) && (
           <div className={styles.chipsRow}>
             <span className={styles.chipsLabel}>Active filters:</span>
             {handoff && (
@@ -350,6 +388,16 @@ export function RegisterPage(props: RegisterPageProps) {
                 onClick={props.onClearHandoff}
               >
                 From answer: {handoff.title} <span className={styles.chipX}>✕</span>
+              </button>
+            )}
+            {trendMonth && (
+              <button
+                type="button"
+                title="Remove month filter"
+                className={styles.chip}
+                onClick={() => setTrendMonth(null)}
+              >
+                Month: {formatIsoDate(trendMonth)} <span className={styles.chipX}>✕</span>
               </button>
             )}
             {chips.map((ch) => (
