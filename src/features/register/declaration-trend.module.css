@@ -1,0 +1,110 @@
+.card {
+  margin-top: 12px;
+  padding: 14px 16px 10px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 650;
+}
+.subtitle,
+.note {
+  margin: 4px 0 0;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.note {
+  margin-top: 9px;
+}
+.chartScroll {
+  overflow-x: auto;
+  margin-top: 8px;
+}
+.chart {
+  display: block;
+  width: 100%;
+  min-width: 650px;
+  height: auto;
+  overflow: visible;
+  font-variant-numeric: tabular-nums;
+}
+.grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.axisLabel,
+.valueLabel,
+.monthLabel {
+  fill: var(--ink-muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+.valueLabel {
+  fill: var(--ink);
+  font-size: 10px;
+}
+.line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.point {
+  fill: var(--surface);
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.monthPoint {
+  cursor: pointer;
+}
+.monthPoint:focus-visible circle,
+.point[data-selected='true'] {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+.monthLabelInteractive {
+  composes: monthLabel;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border-2);
+  text-underline-offset: 3px;
+}
+.monthLabelInteractive:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.message,
+.error {
+  padding: 36px 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+  text-align: center;
+}
+.error {
+  color: var(--negative);
+}
+.retry {
+  margin-left: 8px;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.retry:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

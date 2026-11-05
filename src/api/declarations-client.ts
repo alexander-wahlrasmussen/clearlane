@@ -13,6 +13,8 @@ export interface DeclarationFilter {
   status?: DeclarationStatus;
   /** ISO date — declarations cleared on/after this date. */
   fromDate?: string;
+  /** ISO date — declarations cleared on/before this date. */
+  toDate?: string;
   /** Matches MRN or customer reference, case-insensitive substring. */
   search?: string;
   /** Only declarations with a required field missing or values unverified. */
